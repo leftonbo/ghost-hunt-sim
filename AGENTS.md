@@ -20,7 +20,7 @@
 ## 開発コマンド
 
 | コマンド | 説明 |
-|----------|------|
+| ---------- | ------ |
 | `npm run dev` | 開発サーバー起動（HMR 対応） |
 | `npm run build` | プロダクションビルド（`dist/` に出力） |
 | `npm run preview` | ビルド結果のプレビュー |
@@ -29,7 +29,7 @@
 
 ## ファイル構成
 
-```
+```text
 ghost-hunt-sim/
 ├── index.html                 # Vite エントリ HTML（DOM 構造のみ）
 ├── src/
@@ -101,7 +101,7 @@ ghost-hunt-sim/
 
 #### エンティティの状態遷移（Ghost）
 
-```
+```text
 hunting → [ニンゲンに接触] → digesting → [消化タイマー完了] → releasing → hunting
 ```
 
@@ -185,6 +185,7 @@ hunting → [ニンゲンに接触] → digesting → [消化タイマー完了]
 
 - プロジェクトの拡張にあわせて AGENTS.md や README.md も更新してください
 - Serena MCP から現状の把握やメモリの更新を行ってください
+- タスク完了後は Serena MCP にメモリの更新を行い、 git コミットを行ってください。
 
 ## git コミットメッセージ規則
 
