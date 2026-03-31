@@ -48,7 +48,6 @@ export class Human {
     let threatened = false
 
     for (const g of ghosts) {
-      if (g.state !== 'hunting') continue
       const d = dist(this, g)
       if (d < HUMAN_VISION_RADIUS && d > 0) {
         const dx = this.x - g.x
