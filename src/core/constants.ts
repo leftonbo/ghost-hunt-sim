@@ -21,12 +21,12 @@ export const LIFE_FORCE_DRAIN_RATE = 0.5
 // スタミナパラメータ
 export const MAX_STAMINA = 100
 export const STAMINA_DRAIN_RATE = 0.4
-export const STAMINA_RECOVERY_RATE = 0.3
-export const FATIGUE_SPEED_MULTIPLIER = 0.3
+export const STAMINA_RECOVERY_RATE = 0.5
+export const FATIGUE_SPEED_MULTIPLIER = 0.5
 
 // もがき・脱出パラメータ
-export const STRUGGLE_STAMINA_COST = 0.8
-export const ESCAPE_PROGRESS_RATE = 0.5
+export const STRUGGLE_STAMINA_COST = 0.4
+export const ESCAPE_PROGRESS_RATE = 0.8
 export const ESCAPE_THRESHOLD = 100
 
 // おばけスタンパラメータ
