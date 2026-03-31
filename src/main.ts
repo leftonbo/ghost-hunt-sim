@@ -22,15 +22,14 @@ document.querySelector('.end-title')!.classList.add(styles.endTitle)
 document.querySelector('.end-stats')!.classList.add(styles.endStats)
 document.getElementById('control-panel')!.className = styles.controlPanel
 document.querySelectorAll('.slider-group').forEach((el) => el.classList.add(styles.sliderGroup))
-document
-  .querySelectorAll('.slider-value')
-  .forEach((el) => el.classList.add(styles.sliderValue))
+document.querySelectorAll('.slider-value').forEach((el) => el.classList.add(styles.sliderValue))
 
 // UI要素
 const ui: UIElements = {
   ghostCount: getElement('ghost-count'),
   humanCount: getElement('human-count'),
   digestingCount: getElement('digesting-count'),
+  lanternCount: getElement('lantern-count'),
   elapsedTime: getElement('elapsed-time'),
   endOverlay: getElement('end-overlay'),
   endStats: getElement('end-stats'),
@@ -84,9 +83,11 @@ btnReset.addEventListener('click', () => {
 const sliderGhosts = getElement<HTMLInputElement>('slider-ghosts')
 const sliderHumans = getElement<HTMLInputElement>('slider-humans')
 const sliderSpeed = getElement<HTMLInputElement>('slider-speed')
+const sliderLanterns = getElement<HTMLInputElement>('slider-lanterns')
 const valGhosts = getElement('val-ghosts')
 const valHumans = getElement('val-humans')
 const valSpeed = getElement('val-speed')
+const valLanterns = getElement('val-lanterns')
 
 sliderGhosts.addEventListener('input', () => {
   const v = parseInt(sliderGhosts.value, 10)
@@ -104,6 +105,12 @@ sliderSpeed.addEventListener('input', () => {
   const v = parseInt(sliderSpeed.value, 10) / 10
   valSpeed.textContent = v.toFixed(1) + 'x'
   sim.speedMultiplier = v
+})
+
+sliderLanterns.addEventListener('input', () => {
+  const v = parseInt(sliderLanterns.value, 10)
+  valLanterns.textContent = String(v)
+  sim.lanternCountInit = v
 })
 
 // ============================================================

@@ -191,6 +191,25 @@ export class Ghost {
     this.targetRadius = this.baseRadius
   }
 
+  stunExternal(): void {
+    // 消化中の場合、ニンゲンを吐き出す
+    if (this.state === 'digesting' && this.capturedHuman) {
+      const human = this.capturedHuman
+      human.captured = false
+      const angle = rand(0, Math.PI * 2)
+      const escapeDist = this.currentRadius + 10
+      human.x = this.x + Math.cos(angle) * escapeDist
+      human.y = this.y + Math.sin(angle) * escapeDist
+      human.vx = Math.cos(angle) * 3
+      human.vy = Math.sin(angle) * 3
+      this.escapedHuman = human
+      this.capturedHuman = null
+    }
+    this.state = 'stunned'
+    this.stunTimer = STUN_DURATION
+    this.targetRadius = this.baseRadius
+  }
+
   finishDigestion(): void {
     this.state = 'hunting'
     this.capturedHuman = null
@@ -237,8 +256,7 @@ export class Ghost {
     if (scale <= 0) return
 
     const r = this.currentRadius * scale
-    const floatY =
-      Math.sin(time * 0.002 + this.wobbleOffset) * GHOST_WOBBLE_AMPLITUDE
+    const floatY = Math.sin(time * 0.002 + this.wobbleOffset) * GHOST_WOBBLE_AMPLITUDE
 
     ctx.save()
     ctx.translate(this.x, this.y + floatY)

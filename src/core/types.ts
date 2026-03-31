@@ -1,5 +1,5 @@
 export type GhostState = 'hunting' | 'digesting' | 'releasing' | 'stunned'
-export type ParticleType = 'mist' | 'flash' | 'star' | 'pop'
+export type ParticleType = 'mist' | 'flash' | 'star' | 'pop' | 'lantern'
 export type SimulationState = 'idle' | 'running' | 'paused' | 'finished'
 
 export interface Position {
@@ -11,6 +11,7 @@ export interface UIElements {
   ghostCount: HTMLElement
   humanCount: HTMLElement
   digestingCount: HTMLElement
+  lanternCount: HTMLElement
   elapsedTime: HTMLElement
   endOverlay: HTMLElement
   endStats: HTMLElement

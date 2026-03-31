@@ -76,3 +76,12 @@ export const WALL_MARGIN = 10
 // 壁回避ステアリング
 export const WALL_AVOIDANCE_RADIUS = 60
 export const WALL_AVOIDANCE_STRENGTH = 1.5
+
+// ランタンパラメータ
+export const DEFAULT_LANTERN_COUNT = 5
+export const LANTERN_PICKUP_DISTANCE = 25
+export const LANTERN_ACTIVATION_DISTANCE = 80
+export const LANTERN_STUN_RADIUS = 120
+export const LANTERN_COOLDOWN = 300
+export const LANTERN_INITIAL_CARRY_RATIO = 0.3
+export const LANTERN_RADIUS = 8

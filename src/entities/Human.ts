@@ -1,4 +1,5 @@
 import type { Ghost } from './Ghost'
+import type { Lantern } from './Lantern'
 import {
   HUMAN_BASE_SPEED,
   HUMAN_VISION_RADIUS,
@@ -37,6 +38,7 @@ export class Human {
   isFatigued: boolean
   captured: boolean
   escapeProgress: number
+  lantern: Lantern | null
 
   constructor(x: number, y: number) {
     this.x = x
@@ -54,10 +56,21 @@ export class Human {
     this.isFatigued = false
     this.captured = false
     this.escapeProgress = 0
+    this.lantern = null
   }
 
   effectiveMaxStamina(): number {
     return MAX_STAMINA * (this.lifeForce / MAX_LIFE_FORCE)
+  }
+
+  pickUpLantern(lantern: Lantern): void {
+    this.lantern = lantern
+  }
+
+  dropLantern(): Lantern | null {
+    const lantern = this.lantern
+    this.lantern = null
+    return lantern
   }
 
   updateCaptured(dt: number): void {
@@ -345,6 +358,11 @@ export class Human {
       ctx.fillStyle = '#ffaa44'
       ctx.font = `${r * 1.0}px sans-serif`
       ctx.fillText('💤', x + r * 0.6, y - r * 2.0)
+    }
+
+    // ランタン所持表示
+    if (this.lantern) {
+      this.lantern.drawCarried(ctx, x + r * 1.5, y + r * 0.3)
     }
 
     ctx.restore()

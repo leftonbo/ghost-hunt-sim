@@ -1,9 +1,20 @@
 import type { SimulationState, UIElements } from '../core/types'
-import { DEFAULT_GHOST_COUNT, DEFAULT_HUMAN_COUNT, BG_COLOR_TOP, BG_COLOR_BOTTOM } from '../core/constants'
-import { rand, randInt, formatTime } from '../core/utils'
+import {
+  DEFAULT_GHOST_COUNT,
+  DEFAULT_HUMAN_COUNT,
+  DEFAULT_LANTERN_COUNT,
+  LANTERN_PICKUP_DISTANCE,
+  LANTERN_ACTIVATION_DISTANCE,
+  LANTERN_STUN_RADIUS,
+  LANTERN_INITIAL_CARRY_RATIO,
+  BG_COLOR_TOP,
+  BG_COLOR_BOTTOM,
+} from '../core/constants'
+import { rand, randInt, dist, formatTime } from '../core/utils'
 import { Ghost } from './Ghost'
 import { Human } from './Human'
 import { Particle } from './Particle'
+import { Lantern } from './Lantern'
 
 export class Simulation {
   canvas: HTMLCanvasElement
@@ -11,6 +22,7 @@ export class Simulation {
   ghosts: Ghost[]
   humans: Human[]
   particles: Particle[]
+  lanterns: Lantern[]
   state: SimulationState
   elapsedTime: number
   speedMultiplier: number
@@ -19,6 +31,7 @@ export class Simulation {
   bgGradient: CanvasGradient | null
   ghostCountInit: number
   humanCountInit: number
+  lanternCountInit: number
   width: number
   height: number
   ui: UIElements
@@ -29,6 +42,7 @@ export class Simulation {
     this.ghosts = []
     this.humans = []
     this.particles = []
+    this.lanterns = []
     this.state = 'idle'
     this.elapsedTime = 0
     this.speedMultiplier = 1.0
@@ -38,6 +52,7 @@ export class Simulation {
 
     this.ghostCountInit = DEFAULT_GHOST_COUNT
     this.humanCountInit = DEFAULT_HUMAN_COUNT
+    this.lanternCountInit = DEFAULT_LANTERN_COUNT
 
     this.width = 0
     this.height = 0
@@ -67,6 +82,7 @@ export class Simulation {
     this.ghosts = []
     this.humans = []
     this.particles = []
+    this.lanterns = []
     this.elapsedTime = 0
     this.state = 'idle'
 
@@ -81,6 +97,30 @@ export class Simulation {
     for (let i = 0; i < this.humanCountInit; i++) {
       this.humans.push(
         new Human(rand(margin, this.width - margin), rand(margin, this.height - margin)),
+      )
+    }
+
+    // ランタン生成・配布
+    const carryCount = Math.min(
+      Math.floor(this.lanternCountInit * LANTERN_INITIAL_CARRY_RATIO),
+      this.humans.length,
+    )
+    const groundCount = this.lanternCountInit - carryCount
+
+    // 一部のニンゲンにランタンを持たせる
+    const candidates = [...this.humans]
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = randInt(0, i)
+      ;[candidates[i], candidates[j]] = [candidates[j], candidates[i]]
+    }
+    for (let i = 0; i < carryCount; i++) {
+      candidates[i].pickUpLantern(new Lantern(0, 0))
+    }
+
+    // 残りは地面に配置
+    for (let i = 0; i < groundCount; i++) {
+      this.lanterns.push(
+        new Lantern(rand(margin, this.width - margin), rand(margin, this.height - margin)),
       )
     }
 
@@ -141,6 +181,57 @@ export class Simulation {
       ghost.update(this.humans, dt, time, this.width, this.height, this.ghosts)
     }
 
+    // ランタン拾得判定（未所持ニンゲンが地面のランタンに近づくと拾う）
+    for (const human of this.humans) {
+      if (human.lantern || human.captured) continue
+      for (let i = this.lanterns.length - 1; i >= 0; i--) {
+        if (dist(human, this.lanterns[i]) < LANTERN_PICKUP_DISTANCE) {
+          human.pickUpLantern(this.lanterns[i])
+          this.lanterns.splice(i, 1)
+          break
+        }
+      }
+    }
+
+    // ランタン自動発動判定
+    for (const human of this.humans) {
+      if (!human.lantern || !human.lantern.isReady() || human.captured) continue
+
+      // おばけが近くにいるか判定
+      let threatened = false
+      for (const ghost of this.ghosts) {
+        if (ghost.state === 'stunned') continue
+        if (dist(human, ghost) < LANTERN_ACTIVATION_DISTANCE) {
+          threatened = true
+          break
+        }
+      }
+
+      if (threatened) {
+        // ランタン発動: 範囲内の全おばけをスタン
+        human.lantern.activate()
+        for (const ghost of this.ghosts) {
+          if (ghost.state === 'stunned') continue
+          if (dist(human, ghost) < LANTERN_STUN_RADIUS) {
+            ghost.stunExternal()
+          }
+        }
+        // 発動エフェクト
+        this.particles.push(new Particle(human.x, human.y, 'lantern', 'rgba(255, 220, 80, 0.7)'))
+        this.particles.push(new Particle(human.x, human.y, 'flash', '#ffffcc'))
+        for (let j = 0; j < 5; j++) {
+          this.particles.push(
+            new Particle(
+              human.x,
+              human.y,
+              'star',
+              ['#ffee88', '#ffffff', '#ffcc44'][randInt(0, 2)],
+            ),
+          )
+        }
+      }
+    }
+
     // 捕食判定
     for (const ghost of this.ghosts) {
       if (ghost.state !== 'hunting') continue
@@ -148,6 +239,15 @@ export class Simulation {
         if (ghost.checkCapture(this.humans[i])) {
           const human = this.humans[i]
           this.humans.splice(i, 1)
+
+          // ランタンをドロップ
+          const droppedLantern = human.dropLantern()
+          if (droppedLantern) {
+            droppedLantern.x = human.x
+            droppedLantern.y = human.y
+            this.lanterns.push(droppedLantern)
+          }
+
           ghost.startFeeding(human)
 
           // フラッシュエフェクト
@@ -211,6 +311,14 @@ export class Simulation {
       human.update(this.ghosts, this.humans, dt, this.width, this.height)
     }
 
+    // ランタン更新（地面のランタン + ニンゲン所持のランタン）
+    for (const lantern of this.lanterns) {
+      lantern.update(dt)
+    }
+    for (const human of this.humans) {
+      if (human.lantern) human.lantern.update(dt)
+    }
+
     // パーティクル更新
     this.particles = this.particles.filter((p) => p.update(dt))
 
@@ -235,8 +343,7 @@ export class Simulation {
     if (this.humans.length === 0 && !hasDigesting && this.state === 'running') {
       this.state = 'finished'
       this.ui.endOverlay.classList.add('visible')
-      this.ui.endStats.textContent =
-        `おばけ ${this.ghosts.length} 体 ・ 経過時間 ${formatTime(this.elapsedTime)}`
+      this.ui.endStats.textContent = `おばけ ${this.ghosts.length} 体 ・ 経過時間 ${formatTime(this.elapsedTime)}`
       // 終了後もアニメーションは続ける
       this.loopFinished()
     }
@@ -290,6 +397,11 @@ export class Simulation {
       if (p.type === 'mist') p.draw(ctx)
     }
 
+    // 地面のランタン描画
+    for (const lantern of this.lanterns) {
+      lantern.draw(ctx)
+    }
+
     // ニンゲン描画
     for (const human of this.humans) {
       human.draw(ctx)
@@ -312,6 +424,8 @@ export class Simulation {
     this.ui.digestingCount.textContent = String(
       this.ghosts.filter((g) => g.state === 'digesting').length,
     )
+    const carriedCount = this.humans.filter((h) => h.lantern).length
+    this.ui.lanternCount.textContent = String(this.lanterns.length + carriedCount)
     this.ui.elapsedTime.textContent = formatTime(this.elapsedTime)
   }
 }

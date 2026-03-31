@@ -55,6 +55,12 @@ export class Particle {
         this.size = rand(10, 25)
         this.decay = 0.04
         break
+      case 'lantern':
+        this.size = 5
+        this.maxSize = 120
+        this.decay = 0.03
+        this.color = color || 'rgba(255, 220, 80, 0.6)'
+        break
     }
   }
 
@@ -64,6 +70,10 @@ export class Particle {
     this.y += this.vy * dt
 
     if (this.type === 'flash') {
+      this.size = this.maxSize * (1 - this.life)
+    }
+
+    if (this.type === 'lantern') {
       this.size = this.maxSize * (1 - this.life)
     }
 
@@ -116,6 +126,22 @@ export class Particle {
         ctx.beginPath()
         ctx.arc(this.x, this.y, r, 0, Math.PI * 2)
         ctx.stroke()
+        break
+      }
+      case 'lantern': {
+        ctx.globalAlpha = alpha * 0.4
+        ctx.strokeStyle = this.color
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+        ctx.stroke()
+
+        // 内側の光
+        ctx.globalAlpha = alpha * 0.15
+        ctx.fillStyle = this.color
+        ctx.beginPath()
+        ctx.arc(this.x, this.y, this.size * 0.8, 0, Math.PI * 2)
+        ctx.fill()
         break
       }
     }
