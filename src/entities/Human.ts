@@ -6,6 +6,8 @@ import {
   HUMAN_RADIUS,
   FLOCK_COHESION,
   FLOCK_SEPARATION,
+  FLEE_SEPARATION,
+  FLEE_COOLDOWN,
   WALL_MARGIN,
   WALL_AVOIDANCE_RADIUS,
   WALL_AVOIDANCE_STRENGTH,
@@ -22,6 +24,7 @@ export class Human {
   wanderTimer: number
   legPhase: number
   fleeing: boolean
+  fleeTimer: number
 
   constructor(x: number, y: number) {
     this.x = x
@@ -33,6 +36,7 @@ export class Human {
     this.wanderTimer = 0
     this.legPhase = rand(0, Math.PI * 2)
     this.fleeing = false
+    this.fleeTimer = 0
   }
 
   update(ghosts: Ghost[], humans: Human[], dt: number, canvasW: number, canvasH: number): void {
@@ -56,13 +60,23 @@ export class Human {
       }
     }
 
-    this.fleeing = threatened
-
+    // 逃走クールダウン管理
     if (threatened) {
-      // 逃走
-      const n = normalize(fleeVx, fleeVy)
-      this.vx += n.x * speed * 0.3 * dt
-      this.vy += n.y * speed * 0.3 * dt
+      this.fleeTimer = FLEE_COOLDOWN
+    } else {
+      this.fleeTimer = Math.max(0, this.fleeTimer - dt)
+    }
+    this.fleeing = this.fleeTimer > 0
+
+    if (this.fleeing) {
+      // 逃走（脅威検知中は加速、クールダウン中は慣性で移動）
+      if (threatened) {
+        const n = normalize(fleeVx, fleeVy)
+        this.vx += n.x * speed * 0.3 * dt
+        this.vy += n.y * speed * 0.3 * dt
+      }
+      // 逃走中もニンゲン同士の分離力を適用（固まり防止）
+      this.applySeparation(humans, dt, FLEE_SEPARATION)
       // 速度制限
       const currentSpeed = Math.hypot(this.vx, this.vy)
       if (currentSpeed > speed) {
@@ -107,12 +121,27 @@ export class Human {
     this.bounceOffWalls(canvasW, canvasH)
   }
 
+  applySeparation(humans: Human[], dt: number, strength: number): void {
+    let sepX = 0,
+      sepY = 0
+
+    for (const other of humans) {
+      if (other === this) continue
+      const d = dist(this, other)
+      if (d < HUMAN_FLOCK_RADIUS * 0.4 && d > 0) {
+        sepX += (this.x - other.x) / d
+        sepY += (this.y - other.y) / d
+      }
+    }
+
+    this.vx += sepX * strength * dt
+    this.vy += sepY * strength * dt
+  }
+
   applyFlocking(humans: Human[], dt: number): void {
     let cohX = 0,
       cohY = 0,
       cohCount = 0
-    let sepX = 0,
-      sepY = 0
 
     for (const other of humans) {
       if (other === this) continue
@@ -122,12 +151,6 @@ export class Human {
         cohX += other.x
         cohY += other.y
         cohCount++
-
-        // Separation
-        if (d < HUMAN_FLOCK_RADIUS * 0.4) {
-          sepX += (this.x - other.x) / d
-          sepY += (this.y - other.y) / d
-        }
       }
     }
 
@@ -138,8 +161,8 @@ export class Human {
       this.vy += cohY * FLOCK_COHESION * dt
     }
 
-    this.vx += sepX * FLOCK_SEPARATION * dt
-    this.vy += sepY * FLOCK_SEPARATION * dt
+    // Separation
+    this.applySeparation(humans, dt, FLOCK_SEPARATION)
   }
 
   applyWallAvoidance(w: number, h: number, speed: number, dt: number): void {

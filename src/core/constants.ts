@@ -23,6 +23,10 @@ export const FLOCK_COHESION = 0.015
 export const FLOCK_SEPARATION = 0.05
 export const FLOCK_ALIGNMENT = 0.02
 
+// ニンゲン逃走時パラメータ
+export const FLEE_SEPARATION = 0.08
+export const FLEE_COOLDOWN = 60
+
 // おばけサイズ・ゆらぎ
 export const GHOST_BASE_RADIUS = 18
 export const HUMAN_RADIUS = 7
