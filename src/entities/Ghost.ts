@@ -1,4 +1,4 @@
-import type { GhostState } from '../core/types'
+import type { GhostState, GhostType } from '../core/types'
 import type { Human } from './Human'
 import {
   GHOST_BASE_SPEED,
@@ -25,8 +25,9 @@ export class Ghost {
   currentRadius: number
   targetRadius: number
   state: GhostState
+  ghostType: GhostType
   capturedHuman: Human | null
-  escapedHuman: Human | null
+  escapedHumans: Human[]
   stunTimer: number
   wobbleOffset: number
   wobbleTime: number
@@ -44,8 +45,9 @@ export class Ghost {
     this.currentRadius = GHOST_BASE_RADIUS
     this.targetRadius = GHOST_BASE_RADIUS
     this.state = 'hunting'
+    this.ghostType = 'normal'
     this.capturedHuman = null
-    this.escapedHuman = null
+    this.escapedHumans = []
     this.stunTimer = 0
     this.wobbleOffset = rand(0, Math.PI * 2)
     this.wobbleTime = 0
@@ -73,78 +75,71 @@ export class Ghost {
     this.currentRadius += (this.targetRadius - this.currentRadius) * 0.08 * dt
 
     switch (this.state) {
-      case 'hunting': {
-        const target = this.findNearestHuman(humans)
-        if (target) {
-          const dx = target.x - this.x
-          const dy = target.y - this.y
-          const n = normalize(dx, dy)
-          const speed = GHOST_BASE_SPEED
-          // sin波で横揺れ
-          const wobble =
-            Math.sin(this.wobbleTime * GHOST_WOBBLE_SPEED + this.wobbleOffset) *
-            GHOST_WOBBLE_AMPLITUDE
-          // 進行方向に垂直な方向にゆらぎ
-          const perpX = -n.y
-          const perpY = n.x
-          this.vx = n.x * speed + perpX * wobble * 0.3
-          this.vy = n.y * speed + perpY * wobble * 0.3
-        } else {
-          // ニンゲンがいない → ゆらゆら浮遊
-          this.vx *= 0.95
-          this.vy *= 0.95
-        }
-
-        // おばけ同士の分離力
-        this.applySeparation(ghosts, dt)
-
-        this.x += this.vx * dt
-        this.y += this.vy * dt
+      case 'hunting':
+        this.updateHunting(humans, dt, ghosts)
         break
-      }
-      case 'digesting': {
-        // 生気を吸収
-        if (this.capturedHuman) {
-          this.capturedHuman.lifeForce -= LIFE_FORCE_DRAIN_RATE * dt
-          // ニンゲンのもがきロジック呼び出し
-          this.capturedHuman.updateCaptured(dt)
-
-          // 脱出判定
-          if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {
-            this.handleEscape()
-            break
-          }
-
-          // 力尽き判定
-          if (this.capturedHuman.lifeForce <= 0) {
-            this.capturedHuman.lifeForce = 0
-            this.state = 'releasing'
-          }
-        }
-
-        // ゆっくり浮遊
-        this.x += Math.sin(this.wobbleTime * 1.5 + this.wobbleOffset) * 0.15 * dt
-        this.y += Math.cos(this.wobbleTime * 1.2 + this.wobbleOffset * 0.7) * 0.1 * dt
+      case 'digesting':
+        this.updateDigesting(dt)
         break
-      }
-      case 'releasing': {
-        // releasing は Simulation 側で処理してすぐ hunting に戻す
+      case 'releasing':
         break
-      }
-      case 'stunned': {
-        // スタン中は移動しない
-        this.vx = 0
-        this.vy = 0
-        this.stunTimer -= dt
-        if (this.stunTimer <= 0) {
-          this.state = 'hunting'
-        }
+      case 'stunned':
+        this.updateStunned(dt)
         break
-      }
     }
 
     // 壁反射
     this.bounceOffWalls(canvasW, canvasH)
+  }
+
+  updateHunting(humans: Human[], dt: number, ghosts: Ghost[]): void {
+    const target = this.findNearestHuman(humans)
+    if (target) {
+      const dx = target.x - this.x
+      const dy = target.y - this.y
+      const n = normalize(dx, dy)
+      const speed = GHOST_BASE_SPEED
+      const wobble =
+        Math.sin(this.wobbleTime * GHOST_WOBBLE_SPEED + this.wobbleOffset) * GHOST_WOBBLE_AMPLITUDE
+      const perpX = -n.y
+      const perpY = n.x
+      this.vx = n.x * speed + perpX * wobble * 0.3
+      this.vy = n.y * speed + perpY * wobble * 0.3
+    } else {
+      this.vx *= 0.95
+      this.vy *= 0.95
+    }
+    this.applySeparation(ghosts, dt)
+    this.x += this.vx * dt
+    this.y += this.vy * dt
+  }
+
+  updateDigesting(dt: number): void {
+    if (this.capturedHuman) {
+      this.capturedHuman.lifeForce -= LIFE_FORCE_DRAIN_RATE * dt
+      this.capturedHuman.updateCaptured(dt)
+
+      if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {
+        this.handleEscape()
+        return
+      }
+
+      if (this.capturedHuman.lifeForce <= 0) {
+        this.capturedHuman.lifeForce = 0
+        this.state = 'releasing'
+      }
+    }
+    this.x += Math.sin(this.wobbleTime * 1.5 + this.wobbleOffset) * 0.15 * dt
+    this.y += Math.cos(this.wobbleTime * 1.2 + this.wobbleOffset * 0.7) * 0.1 * dt
+  }
+
+  updateStunned(dt: number): void {
+    this.vx = 0
+    this.vy = 0
+    this.stunTimer -= dt
+    if (this.stunTimer <= 0) {
+      this.state = 'hunting'
+    }
   }
 
   findNearestHuman(humans: Human[]): Human | null {
@@ -160,8 +155,18 @@ export class Ghost {
     return nearest
   }
 
+  canCapture(): boolean {
+    return this.state === 'hunting'
+  }
+
   checkCapture(human: Human): boolean {
     return dist(this, human) < CAPTURE_DISTANCE + this.currentRadius * 0.3
+  }
+
+  isInRange(sourceX: number, sourceY: number, radius: number): boolean {
+    const dx = sourceX - this.x
+    const dy = sourceY - this.y
+    return Math.hypot(dx, dy) < radius
   }
 
   startFeeding(human: Human): void {
@@ -183,7 +188,7 @@ export class Ghost {
       human.y = this.y + Math.sin(angle) * escapeDist
       human.vx = Math.cos(angle) * 3
       human.vy = Math.sin(angle) * 3
-      this.escapedHuman = human
+      this.escapedHumans.push(human)
       this.capturedHuman = null
     }
     this.state = 'stunned'
@@ -202,7 +207,7 @@ export class Ghost {
       human.y = this.y + Math.sin(angle) * escapeDist
       human.vx = Math.cos(angle) * 3
       human.vy = Math.sin(angle) * 3
-      this.escapedHuman = human
+      this.escapedHumans.push(human)
       this.capturedHuman = null
     }
     this.state = 'stunned'
@@ -262,18 +267,24 @@ export class Ghost {
     ctx.translate(this.x, this.y + floatY)
     ctx.scale(scale, scale)
 
-    // スタン中は点滅エフェクト
     if (this.state === 'stunned') {
       ctx.globalAlpha = this.opacity * (0.3 + Math.abs(Math.sin(time * 0.008)) * 0.5)
     } else {
       ctx.globalAlpha = this.opacity
     }
 
-    // おばけの体（丸い形状 + 下部の波形）
+    this.drawBody(ctx, r)
+    this.drawGlow(ctx, r)
+    this.drawDigestingSilhouette(ctx, r, time)
+    this.drawFace(ctx, r, scale)
+
+    ctx.restore()
+  }
+
+  drawBody(ctx: CanvasRenderingContext2D, r: number): void {
     ctx.fillStyle = this.color
     ctx.beginPath()
     ctx.arc(0, -r * 0.15, r, Math.PI, 0, false)
-    // 下部の波形スカート
     const waveCount = 5
     const waveW = (r * 2) / waveCount
     const baseY = -r * 0.15 + r * 0.6
@@ -286,8 +297,9 @@ export class Ghost {
     }
     ctx.closePath()
     ctx.fill()
+  }
 
-    // 内部グロウ
+  drawGlow(ctx: CanvasRenderingContext2D, r: number): void {
     const glow = ctx.createRadialGradient(0, -r * 0.2, 0, 0, -r * 0.2, r * 0.8)
     glow.addColorStop(0, 'rgba(255,255,255,0.15)')
     glow.addColorStop(1, 'rgba(255,255,255,0)')
@@ -295,23 +307,23 @@ export class Ghost {
     ctx.beginPath()
     ctx.arc(0, -r * 0.2, r * 0.8, 0, Math.PI * 2)
     ctx.fill()
+  }
 
-    // 消化中: 内部にニンゲンのシルエット（もがきで揺れる）
-    if (this.state === 'digesting' && this.capturedHuman) {
-      const human = this.capturedHuman
-      const lifeRatio = human.lifeForce / 100
-      const silAlpha = 0.3 * lifeRatio
-      // もがき中はシルエットが揺れる（スタミナがある間）
-      const struggleShake = human.stamina > 0 ? Math.sin(time * 0.02) * r * 0.15 : 0
-      ctx.globalAlpha = silAlpha
-      ctx.fillStyle = '#3a2520'
-      ctx.beginPath()
-      ctx.arc(struggleShake, r * 0.05, r * 0.35 * (0.7 + lifeRatio * 0.3), 0, Math.PI * 2)
-      ctx.fill()
-      ctx.globalAlpha = this.opacity
-    }
+  drawDigestingSilhouette(ctx: CanvasRenderingContext2D, r: number, time: number): void {
+    if (this.state !== 'digesting' || !this.capturedHuman) return
+    const human = this.capturedHuman
+    const lifeRatio = human.lifeForce / 100
+    const silAlpha = 0.3 * lifeRatio
+    const struggleShake = human.stamina > 0 ? Math.sin(time * 0.02) * r * 0.15 : 0
+    ctx.globalAlpha = silAlpha
+    ctx.fillStyle = '#3a2520'
+    ctx.beginPath()
+    ctx.arc(struggleShake, r * 0.05, r * 0.35 * (0.7 + lifeRatio * 0.3), 0, Math.PI * 2)
+    ctx.fill()
+    ctx.globalAlpha = this.opacity
+  }
 
-    // 目
+  drawFace(ctx: CanvasRenderingContext2D, r: number, scale: number): void {
     const eyeY = -r * 0.3
     const eyeSpacing = r * 0.35
     const eyeR = r * 0.18
@@ -324,7 +336,6 @@ export class Ghost {
     ctx.ellipse(eyeSpacing, eyeY, eyeR, eyeR * 1.2, 0, 0, Math.PI * 2)
     ctx.fill()
 
-    // 瞳
     ctx.fillStyle = '#1a0a2e'
     ctx.globalAlpha = 1.0 * scale
     const pupilR = eyeR * 0.5
@@ -335,7 +346,6 @@ export class Ghost {
     ctx.arc(eyeSpacing + pupilR * 0.2, eyeY + pupilR * 0.15, pupilR, 0, Math.PI * 2)
     ctx.fill()
 
-    // 口（にっこり）
     ctx.globalAlpha = 0.7 * scale
     ctx.strokeStyle = '#1a0a2e'
     ctx.lineWidth = 1.5
@@ -344,7 +354,5 @@ export class Ghost {
     const mouthY = eyeY + r * 0.4
     ctx.arc(0, mouthY - r * 0.1, mouthW, 0.15 * Math.PI, 0.85 * Math.PI)
     ctx.stroke()
-
-    ctx.restore()
   }
 }

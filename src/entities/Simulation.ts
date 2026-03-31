@@ -1,4 +1,4 @@
-import type { SimulationState, UIElements } from '../core/types'
+import type { GhostMode, SimulationState, UIElements } from '../core/types'
 import {
   DEFAULT_GHOST_COUNT,
   DEFAULT_HUMAN_COUNT,
@@ -15,6 +15,7 @@ import { Ghost } from './Ghost'
 import { Human } from './Human'
 import { Particle } from './Particle'
 import { Lantern } from './Lantern'
+import { createGhost, pickGhostType } from './ghost-factory'
 
 export class Simulation {
   canvas: HTMLCanvasElement
@@ -32,6 +33,7 @@ export class Simulation {
   ghostCountInit: number
   humanCountInit: number
   lanternCountInit: number
+  ghostMode: GhostMode
   width: number
   height: number
   ui: UIElements
@@ -53,6 +55,7 @@ export class Simulation {
     this.ghostCountInit = DEFAULT_GHOST_COUNT
     this.humanCountInit = DEFAULT_HUMAN_COUNT
     this.lanternCountInit = DEFAULT_LANTERN_COUNT
+    this.ghostMode = 'random'
 
     this.width = 0
     this.height = 0
@@ -89,7 +92,11 @@ export class Simulation {
     const margin = 60
 
     for (let i = 0; i < this.ghostCountInit; i++) {
-      const g = new Ghost(rand(margin, this.width - margin), rand(margin, this.height - margin))
+      const g = createGhost(
+        rand(margin, this.width - margin),
+        rand(margin, this.height - margin),
+        pickGhostType(this.ghostMode),
+      )
       g.spawnScale = 1 // 初期配置は即表示
       this.ghosts.push(g)
     }
@@ -212,7 +219,7 @@ export class Simulation {
         human.lantern.activate()
         for (const ghost of this.ghosts) {
           if (ghost.state === 'stunned') continue
-          if (dist(human, ghost) < LANTERN_STUN_RADIUS) {
+          if (ghost.isInRange(human.x, human.y, LANTERN_STUN_RADIUS)) {
             ghost.stunExternal()
           }
         }
@@ -234,7 +241,7 @@ export class Simulation {
 
     // 捕食判定
     for (const ghost of this.ghosts) {
-      if (ghost.state !== 'hunting') continue
+      if (!ghost.canCapture()) continue
       for (let i = this.humans.length - 1; i >= 0; i--) {
         if (ghost.checkCapture(this.humans[i])) {
           const human = this.humans[i]
@@ -253,7 +260,7 @@ export class Simulation {
           // フラッシュエフェクト
           this.particles.push(new Particle(human.x, human.y, 'flash', '#ffffff'))
 
-          break // 1フレームで1体のみ捕食
+          if (!ghost.canCapture()) break // 捕食不可になったら次のおばけへ
         }
       }
     }
@@ -266,9 +273,10 @@ export class Simulation {
         // 新おばけを生成
         const angle = rand(0, Math.PI * 2)
         const spawnDist = ghost.baseRadius * 2
-        const newGhost = new Ghost(
+        const newGhost = createGhost(
           ghost.x + Math.cos(angle) * spawnDist,
           ghost.y + Math.sin(angle) * spawnDist,
+          pickGhostType(this.ghostMode),
         )
         newGhost.spawnScale = 0
         newGhost.vx = Math.cos(angle) * 3
@@ -290,10 +298,8 @@ export class Simulation {
 
     // 脱出したニンゲンを回収して humans 配列に復帰
     for (const ghost of this.ghosts) {
-      if (ghost.escapedHuman) {
-        const human = ghost.escapedHuman
+      for (const human of ghost.escapedHumans) {
         this.humans.push(human)
-        ghost.escapedHuman = null
 
         // 脱出エフェクト（星パーティクル）
         for (let j = 0; j < 5; j++) {
@@ -304,6 +310,7 @@ export class Simulation {
         }
         this.particles.push(new Particle(ghost.x, ghost.y, 'flash', '#ffaa44'))
       }
+      ghost.escapedHumans = []
     }
 
     // ニンゲン更新

@@ -1,6 +1,6 @@
 import styles from './style.module.css'
 import { Simulation } from './entities/Simulation'
-import type { UIElements } from './core/types'
+import type { GhostMode, UIElements } from './core/types'
 
 // ============================================================
 // DOM要素取得
@@ -111,6 +111,12 @@ sliderLanterns.addEventListener('input', () => {
   const v = parseInt(sliderLanterns.value, 10)
   valLanterns.textContent = String(v)
   sim.lanternCountInit = v
+})
+
+// おばけモード選択
+const selectGhostMode = getElement<HTMLSelectElement>('select-ghost-mode')
+selectGhostMode.addEventListener('change', () => {
+  sim.ghostMode = selectGhostMode.value as GhostMode
 })
 
 // ============================================================

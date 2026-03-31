@@ -165,3 +165,23 @@
   cursor: pointer;
   border: none;
 }
+
+.sliderGroup :global(select) {
+  background: rgba(100, 60, 200, 0.35);
+  color: #e0d8f0;
+  border: 1px solid rgba(140, 100, 255, 0.4);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.sliderGroup :global(select:hover) {
+  background: rgba(120, 80, 220, 0.55);
+}
+
+.sliderGroup :global(select option) {
+  background: #1a0a2e;
+  color: #e0d8f0;
+}

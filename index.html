@@ -32,6 +32,18 @@
   <button id="btn-reset">🔄 リセット</button>
 
   <div class="slider-group">
+    <label>👻 おばけモード:</label>
+    <select id="select-ghost-mode">
+      <option value="random">ランダム</option>
+      <option value="hard">ハードモード</option>
+      <option value="normal">ノーマル固定</option>
+      <option value="feral">フェラル固定</option>
+      <option value="suction">すいこみ固定</option>
+      <option value="tongue">べろべろ固定</option>
+    </select>
+  </div>
+
+  <div class="slider-group">
     <label>👻 初期おばけ:</label>
     <input type="range" id="slider-ghosts" min="1" max="10" value="1">
     <span class="slider-value" id="val-ghosts">1</span>

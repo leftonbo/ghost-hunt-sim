@@ -85,3 +85,31 @@ export const LANTERN_STUN_RADIUS = 120
 export const LANTERN_COOLDOWN = 300
 export const LANTERN_INITIAL_CARRY_RATIO = 0.3
 export const LANTERN_RADIUS = 8
+
+// フェラルおばけ
+export const FERAL_NORMAL_SPEED = GHOST_BASE_SPEED * 0.7
+export const FERAL_DASH_SPEED = GHOST_BASE_SPEED * 5
+export const FERAL_DASH_DURATION = 12
+export const FERAL_DASH_COOLDOWN = 180
+export const FERAL_DASH_RANGE = 180
+
+// すいこみおばけ
+export const SUCTION_SPEED_MULTIPLIER = 0.7
+export const SUCTION_RANGE = 150
+export const SUCTION_CONE_HALF_ANGLE = Math.PI / 4
+export const SUCTION_PULL_STRENGTH = 2.5
+export const SUCTION_DURATION = 60
+export const SUCTION_COOLDOWN = 120
+export const SUCTION_DRAIN_MULTIPLIER = 0.6
+
+// べろべろおばけ
+export const TONGUE_SPEED_MULTIPLIER = 0.6
+export const TONGUE_RANGE = 200
+export const TONGUE_EXTEND_SPEED = 6
+export const TONGUE_HOMING_STRENGTH = 0.08
+export const TONGUE_COOLDOWN = 150
+export const TONGUE_TIP_CAPTURE_DIST = 15
+
+// おばけモード出現確率
+export const RANDOM_MODE_SPECIAL_CHANCE = 0.15
+export const HARD_MODE_SPECIAL_CHANCE = 0.6
