@@ -74,10 +74,23 @@ export class Human {
   }
 
   updateCaptured(dt: number): void {
-    // スタミナがある間はもがいて脱出進捗を蓄積
-    if (this.stamina > 0) {
+    // スタミナ管理
+    const maxSt = this.effectiveMaxStamina()
+    if (this.isFatigued) {
+      // スタミナ切れ
+      this.stamina = Math.min(maxSt, this.stamina + STAMINA_RECOVERY_RATE * dt)
+      if (this.stamina >= maxSt) {
+        this.isFatigued = false
+      }
+    } else if (!this.isFatigued) {
+      // スタミナがある間はもがいて脱出進捗を蓄積
       this.stamina = Math.max(0, this.stamina - STRUGGLE_STAMINA_COST * dt)
       this.escapeProgress += ESCAPE_PROGRESS_RATE * dt
+
+      // 疲労判定
+      if (this.stamina <= 0) {
+        this.isFatigued = true
+      }
     }
   }
 
@@ -163,7 +176,7 @@ export class Human {
 
     // スタミナ管理
     const maxSt = this.effectiveMaxStamina()
-    if (this.fleeing) {
+    if (this.fleeing && !this.isFatigued) {
       this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN_RATE * dt)
     } else {
       this.stamina = Math.min(maxSt, this.stamina + STAMINA_RECOVERY_RATE * dt)
