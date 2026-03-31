@@ -138,7 +138,7 @@ export class Simulation {
   update(dt: number, time: number): void {
     // ゴースト更新
     for (const ghost of this.ghosts) {
-      ghost.update(this.humans, dt, time, this.width, this.height)
+      ghost.update(this.humans, dt, time, this.width, this.height, this.ghosts)
     }
 
     // 捕食判定

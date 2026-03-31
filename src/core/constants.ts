@@ -33,6 +33,10 @@ export const HUMAN_RADIUS = 7
 export const GHOST_WOBBLE_AMPLITUDE = 3
 export const GHOST_WOBBLE_SPEED = 3.0
 
+// おばけ分離行動
+export const GHOST_SEPARATION_RADIUS = 60
+export const GHOST_SEPARATION_STRENGTH = 0.08
+
 // 色定義
 export const GHOST_COLORS_HSL: [number, number, number][] = [
   [220, 60, 70], // 青白い

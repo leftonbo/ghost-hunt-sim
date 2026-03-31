@@ -5,6 +5,8 @@ import {
   GHOST_BASE_RADIUS,
   GHOST_WOBBLE_AMPLITUDE,
   GHOST_WOBBLE_SPEED,
+  GHOST_SEPARATION_RADIUS,
+  GHOST_SEPARATION_STRENGTH,
   CAPTURE_DISTANCE,
   DIGESTION_TIME_MIN,
   DIGESTION_TIME_MAX,
@@ -49,7 +51,14 @@ export class Ghost {
     this.mistTimer = 0
   }
 
-  update(humans: Human[], dt: number, _time: number, canvasW: number, canvasH: number): void {
+  update(
+    humans: Human[],
+    dt: number,
+    _time: number,
+    canvasW: number,
+    canvasH: number,
+    ghosts: Ghost[],
+  ): void {
     this.wobbleTime += dt * 0.016
 
     // 出現アニメーション
@@ -82,6 +91,10 @@ export class Ghost {
           this.vx *= 0.95
           this.vy *= 0.95
         }
+
+        // おばけ同士の分離力
+        this.applySeparation(ghosts, dt)
+
         this.x += this.vx * dt
         this.y += this.vy * dt
         break
@@ -134,6 +147,21 @@ export class Ghost {
   finishDigestion(): void {
     this.state = 'hunting'
     this.targetRadius = this.baseRadius
+  }
+
+  applySeparation(ghosts: Ghost[], dt: number): void {
+    let sepX = 0
+    let sepY = 0
+    for (const other of ghosts) {
+      if (other === this) continue
+      const d = dist(this, other)
+      if (d < GHOST_SEPARATION_RADIUS && d > 0) {
+        sepX += (this.x - other.x) / d
+        sepY += (this.y - other.y) / d
+      }
+    }
+    this.vx += sepX * GHOST_SEPARATION_STRENGTH * dt
+    this.vy += sepY * GHOST_SEPARATION_STRENGTH * dt
   }
 
   bounceOffWalls(w: number, h: number): void {
