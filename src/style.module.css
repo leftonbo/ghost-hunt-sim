@@ -1,0 +1,167 @@
+:global(*),
+:global(*::before),
+:global(*::after) {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:global(body) {
+  background: #0d0a1a;
+  color: #e0d8f0;
+  font-family: 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.infoPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 10px 16px;
+  background: rgba(20, 12, 40, 0.92);
+  border-bottom: 1px solid rgba(140, 100, 255, 0.25);
+  font-size: 15px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  z-index: 10;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label {
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+.value {
+  font-weight: bold;
+  font-size: 17px;
+  min-width: 28px;
+  text-align: right;
+}
+
+.canvasContainer {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvasContainer :global(canvas) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.endOverlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 5, 25, 0.75);
+  z-index: 20;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.endOverlay:global(.visible) {
+  display: flex;
+}
+
+.endTitle {
+  font-size: 36px;
+  text-shadow: 0 0 20px rgba(160, 100, 255, 0.7);
+}
+
+.endStats {
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.controlPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: rgba(20, 12, 40, 0.92);
+  border-top: 1px solid rgba(140, 100, 255, 0.25);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  z-index: 10;
+}
+
+.controlPanel :global(button) {
+  background: rgba(100, 60, 200, 0.35);
+  color: #e0d8f0;
+  border: 1px solid rgba(140, 100, 255, 0.4);
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.controlPanel :global(button:hover) {
+  background: rgba(120, 80, 220, 0.55);
+}
+
+.controlPanel :global(button:active) {
+  background: rgba(140, 100, 240, 0.7);
+}
+
+.sliderGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.sliderGroup :global(label) {
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.sliderValue {
+  min-width: 32px;
+  text-align: right;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.sliderGroup :global(input[type='range']) {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 90px;
+  height: 6px;
+  background: rgba(140, 100, 255, 0.3);
+  border-radius: 3px;
+  outline: none;
+}
+
+.sliderGroup :global(input[type='range']::-webkit-slider-thumb) {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #a080f0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.sliderGroup :global(input[type='range']::-moz-range-thumb) {
+  width: 16px;
+  height: 16px;
+  background: #a080f0;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}

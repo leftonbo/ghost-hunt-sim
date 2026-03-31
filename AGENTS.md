@@ -4,21 +4,59 @@
 
 ## プロジェクト概要
 
-「おばけ捕食シミュレーター」— ブラウザで動くシングルHTMLファイルのシミュレーションゲーム。  
+「おばけ捕食シミュレーター」— ブラウザで動くシミュレーションゲーム。  
 おばけ（👻）がニンゲン（🧑）を追いかけて捕食し、消化後に新たなおばけとして変換する。  
 全ニンゲンがおばけになったらシミュレーション終了。
 
+## 技術スタック
+
+- **ビルドツール**: Vite 8
+- **言語**: TypeScript（strict モード）
+- **スタイル**: CSS Modules（`*.module.css`）
+- **リンター**: ESLint（flat config） + Prettier
+- **パッケージ管理**: npm
+- **描画**: Canvas 2D API（外部ライブラリ不使用）
+
+## 開発コマンド
+
+| コマンド | 説明 |
+|----------|------|
+| `npm run dev` | 開発サーバー起動（HMR 対応） |
+| `npm run build` | プロダクションビルド（`dist/` に出力） |
+| `npm run preview` | ビルド結果のプレビュー |
+| `npm run lint` | ESLint による静的解析 |
+| `npm run format` | Prettier によるコード整形 |
+
 ## ファイル構成
 
-| ファイル | 用途 |
-|----------|------|
-| `index.html` | メインゲームファイル（HTML + CSS + JS を全て含むシングルファイル） |
-| `README.md` | ユーザー向けドキュメント |
-| `AGENTS.md` | AIエージェント向けドキュメント（このファイル） |
-| `project.yml` | Serena MCP プロジェクト設定 |
-| `.gitignore` | Git 除外設定 |
-| `.gitattributes` | Git 属性設定 |
-| `.editorconfig` | エディタ設定統一 |
+```
+ghost-hunt-sim/
+├── index.html                 # Vite エントリ HTML（DOM 構造のみ）
+├── src/
+│   ├── main.ts                # エントリポイント（DOM 取得、イベント設定、Simulation 起動）
+│   ├── style.module.css       # CSS Modules スタイル
+│   ├── vite-env.d.ts          # Vite / CSS Modules 型定義
+│   ├── core/
+│   │   ├── types.ts           # 型定義（GhostState, ParticleType, SimulationState, Position, UIElements）
+│   │   ├── constants.ts       # ゲーム定数（速度、サイズ、色、距離など）
+│   │   └── utils.ts           # ユーティリティ関数（rand, dist, clamp, normalize, formatTime 等）
+│   └── entities/
+│       ├── Ghost.ts           # おばけクラス
+│       ├── Human.ts           # ニンゲンクラス
+│       ├── Particle.ts        # パーティクルエフェクトクラス
+│       └── Simulation.ts      # シミュレーション管理クラス
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── eslint.config.js
+├── .prettierrc
+├── README.md
+├── AGENTS.md                  # このファイル
+├── project.yml                # Serena MCP プロジェクト設定
+├── .gitignore
+├── .gitattributes
+└── .editorconfig
+```
 
 ## コーディング規約
 
@@ -26,45 +64,40 @@
 - ドキュメント・UIテキスト・コメントは日本語
 - インデント: スペース2つ
 - 文字コード: UTF-8、改行: LF
+- Prettier 設定: セミコロンなし、シングルクォート、末尾カンマ、1行100文字
 - 外部ライブラリは使用しない（Canvas API のみ）
-- マジックナンバーは `<script>` 冒頭の定数セクションにまとめる
+- マジックナンバーは `src/core/constants.ts` にまとめる
+- 型定義は `src/core/types.ts` にまとめる
+- 循環参照回避のため `import type` を使用する
 
-## index.html 内部構造
+## アーキテクチャ
 
-### HTML
+### エントリポイント（`src/main.ts`）
 
-- ヘッダー情報パネル（おばけ数、ニンゲン数、消化中数、経過時間）
-- Canvas 要素（シミュレーション描画領域）
-- フッター操作パネル（開始/一時停止/リセットボタン、スライダー×3）
+- CSS Modules のインポートとクラス名の DOM 適用
+- DOM 要素取得 → `UIElements` オブジェクト構築 → `Simulation` インスタンス生成
+- ボタン・スライダー・リサイズのイベントリスナー設定
 
-### CSS
+### スタイル（CSS Modules）
 
-- `<style>` タグ内に全スタイル記述
+- `src/style.module.css` にクラスベースのスタイルを記述
+- グローバルスタイル（body, button, input[type="range"] 等）は `:global()` で囲む
 - ダークテーマ（暗い紫〜深青）
 - レスポンシブ対応（Canvas が画面サイズにフィット）
 
-### JavaScript アーキテクチャ
+### ゲームループ
 
-- `<script>` タグ内に全ロジック記述
-- **ゲームループ**: `requestAnimationFrame` ベース、`update()` → `draw()` 分離構造
+- `requestAnimationFrame` ベース、`update()` → `drawFrame()` 分離構造
+- `Simulation` クラスが全体を管理
 
-#### 定数セクション
+### クラス構成
 
-ファイル冒頭にまとめた設定定数群:
-
-- エンティティの速度、サイズ、色
-- 捕食距離、消化時間
-- 視界半径、群れ行動パラメータ
-- キャンバスの背景色
-
-#### クラス構成
-
-| クラス | 責務 |
-|--------|------|
-| `Ghost` | おばけエンティティ。状態管理（hunting/digesting/releasing）、最寄りニンゲン追跡、捕食、消化タイマー、描画 |
-| `Human` | ニンゲンエンティティ。逃走行動、ランダム移動、簡易Boids群れ行動、壁反射、描画 |
-| `Particle` | パーティクルエフェクト。霧/フラッシュ/星の3タイプ、ライフ管理 |
-| `Simulation` | メインシミュレーション管理。エンティティ生成/更新/描画、捕食判定、終了判定、UI連携 |
+| クラス | ファイル | 責務 |
+|--------|----------|------|
+| `Ghost` | `src/entities/Ghost.ts` | おばけエンティティ。状態管理（hunting/digesting/releasing）、最寄りニンゲン追跡、捕食、消化タイマー、描画 |
+| `Human` | `src/entities/Human.ts` | ニンゲンエンティティ。逃走行動、ランダム移動、簡易Boids群れ行動、壁反射、描画 |
+| `Particle` | `src/entities/Particle.ts` | パーティクルエフェクト。霧/フラッシュ/星/ポップの4タイプ、ライフ管理 |
+| `Simulation` | `src/entities/Simulation.ts` | メインシミュレーション管理。エンティティ生成/更新/描画、捕食判定、終了判定、UI連携 |
 
 #### エンティティの状態遷移（Ghost）
 
@@ -100,7 +133,7 @@ hunting → [ニンゲンに接触] → digesting → [消化タイマー完了]
 
 ### 定数の調整
 
-`<script>` 冒頭の定数を変更するだけで以下を調整可能:
+`src/core/constants.ts` の定数を変更するだけで以下を調整可能:
 
 - 速度バランス（`GHOST_BASE_SPEED`, `HUMAN_BASE_SPEED`）
 - 捕食距離（`CAPTURE_DISTANCE`）

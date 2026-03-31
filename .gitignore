@@ -12,3 +12,9 @@ Desktop.ini
 
 # Serena
 .serena/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/

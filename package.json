@@ -1,0 +1,25 @@
+{
+  "name": "ghost-hunt-sim",
+  "version": "1.0.0",
+  "description": "画面上の「おばけ👻」が「ニンゲン🧑」を追いかけて丸呑みにするシミュレーターです。   食べられたニンゲンはおばけの体内で消化され、新たなおばけとして飛び出します。   最終的に全員おばけになったらシミュレーション終了！",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.0",
+    "vite": "^8.0.3"
+  }
+}
