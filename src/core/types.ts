@@ -1,4 +1,4 @@
-export type GhostState = 'hunting' | 'digesting' | 'releasing'
+export type GhostState = 'hunting' | 'digesting' | 'releasing' | 'stunned'
 export type ParticleType = 'mist' | 'flash' | 'star' | 'pop'
 export type SimulationState = 'idle' | 'running' | 'paused' | 'finished'
 

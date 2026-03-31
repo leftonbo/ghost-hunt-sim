@@ -11,6 +11,13 @@ import {
   WALL_MARGIN,
   WALL_AVOIDANCE_RADIUS,
   WALL_AVOIDANCE_STRENGTH,
+  MAX_LIFE_FORCE,
+  MAX_STAMINA,
+  STAMINA_DRAIN_RATE,
+  STAMINA_RECOVERY_RATE,
+  FATIGUE_SPEED_MULTIPLIER,
+  STRUGGLE_STAMINA_COST,
+  ESCAPE_PROGRESS_RATE,
 } from '../core/constants'
 import { rand, dist, normalize, pickHumanColor } from '../core/utils'
 
@@ -25,6 +32,11 @@ export class Human {
   legPhase: number
   fleeing: boolean
   fleeTimer: number
+  lifeForce: number
+  stamina: number
+  isFatigued: boolean
+  captured: boolean
+  escapeProgress: number
 
   constructor(x: number, y: number) {
     this.x = x
@@ -37,10 +49,34 @@ export class Human {
     this.legPhase = rand(0, Math.PI * 2)
     this.fleeing = false
     this.fleeTimer = 0
+    this.lifeForce = MAX_LIFE_FORCE
+    this.stamina = MAX_STAMINA
+    this.isFatigued = false
+    this.captured = false
+    this.escapeProgress = 0
+  }
+
+  effectiveMaxStamina(): number {
+    return MAX_STAMINA * (this.lifeForce / MAX_LIFE_FORCE)
+  }
+
+  updateCaptured(dt: number): void {
+    // スタミナがある間はもがいて脱出進捗を蓄積
+    if (this.stamina > 0) {
+      this.stamina = Math.max(0, this.stamina - STRUGGLE_STAMINA_COST * dt)
+      this.escapeProgress += ESCAPE_PROGRESS_RATE * dt
+    }
   }
 
   update(ghosts: Ghost[], humans: Human[], dt: number, canvasW: number, canvasH: number): void {
-    const speed = HUMAN_BASE_SPEED
+    // 捕食されている場合は通常の移動をスキップ
+    if (this.captured) {
+      this.updateCaptured(dt)
+      return
+    }
+
+    const speedMultiplier = this.isFatigued ? FATIGUE_SPEED_MULTIPLIER : 1.0
+    const speed = HUMAN_BASE_SPEED * speedMultiplier
 
     // おばけ検知
     let fleeVx = 0
@@ -111,6 +147,22 @@ export class Human {
 
     this.x += this.vx * dt
     this.y += this.vy * dt
+
+    // スタミナ管理
+    const maxSt = this.effectiveMaxStamina()
+    if (this.fleeing) {
+      this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN_RATE * dt)
+    } else {
+      this.stamina = Math.min(maxSt, this.stamina + STAMINA_RECOVERY_RATE * dt)
+    }
+
+    // 疲労判定
+    if (this.stamina <= 0) {
+      this.isFatigued = true
+    }
+    if (this.isFatigued && this.stamina >= maxSt) {
+      this.isFatigued = false
+    }
 
     // 足のアニメ
     const moveSpeed = Math.hypot(this.vx, this.vy)
@@ -220,13 +272,19 @@ export class Human {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
+    // 捕食中は描画しない（おばけ側のシルエットとして描画される）
+    if (this.captured) return
+
     const r = HUMAN_RADIUS
     const x = this.x
     const y = this.y
     const legSwing = Math.sin(this.legPhase) * (this.fleeing ? 5 : 3)
 
     ctx.save()
-    ctx.globalAlpha = 0.9
+    // 生気低下で薄くなる + 疲労で更に薄くなる
+    const lifeAlpha = 0.5 + 0.5 * (this.lifeForce / MAX_LIFE_FORCE)
+    const fatigueAlpha = this.isFatigued ? 0.6 : 1.0
+    ctx.globalAlpha = 0.9 * lifeAlpha * fatigueAlpha
 
     // 体
     ctx.fillStyle = this.color
@@ -279,6 +337,14 @@ export class Human {
       ctx.fillStyle = '#88ccff'
       ctx.font = `${r * 1.2}px sans-serif`
       ctx.fillText('💧', x + r * 0.8, y - r * 1.2)
+    }
+
+    // 疲労中は疲労マーク
+    if (this.isFatigued) {
+      ctx.globalAlpha = 0.7
+      ctx.fillStyle = '#ffaa44'
+      ctx.font = `${r * 1.0}px sans-serif`
+      ctx.fillText('💤', x + r * 0.6, y - r * 2.0)
     }
 
     ctx.restore()

@@ -8,8 +8,9 @@ import {
   GHOST_SEPARATION_RADIUS,
   GHOST_SEPARATION_STRENGTH,
   CAPTURE_DISTANCE,
-  DIGESTION_TIME_MIN,
-  DIGESTION_TIME_MAX,
+  LIFE_FORCE_DRAIN_RATE,
+  ESCAPE_THRESHOLD,
+  STUN_DURATION,
   WALL_MARGIN,
 } from '../core/constants'
 import { rand, dist, normalize, pickGhostColor } from '../core/utils'
@@ -24,8 +25,9 @@ export class Ghost {
   currentRadius: number
   targetRadius: number
   state: GhostState
-  digestionTimer: number
-  digestionDuration: number
+  capturedHuman: Human | null
+  escapedHuman: Human | null
+  stunTimer: number
   wobbleOffset: number
   wobbleTime: number
   opacity: number
@@ -42,8 +44,9 @@ export class Ghost {
     this.currentRadius = GHOST_BASE_RADIUS
     this.targetRadius = GHOST_BASE_RADIUS
     this.state = 'hunting'
-    this.digestionTimer = 0
-    this.digestionDuration = 0
+    this.capturedHuman = null
+    this.escapedHuman = null
+    this.stunTimer = 0
     this.wobbleOffset = rand(0, Math.PI * 2)
     this.wobbleTime = 0
     this.opacity = rand(0.55, 0.8)
@@ -100,18 +103,42 @@ export class Ghost {
         break
       }
       case 'digesting': {
-        this.digestionTimer -= 16.67 * dt
+        // 生気を吸収
+        if (this.capturedHuman) {
+          this.capturedHuman.lifeForce -= LIFE_FORCE_DRAIN_RATE * dt
+          // ニンゲンのもがきロジック呼び出し
+          this.capturedHuman.updateCaptured(dt)
+
+          // 脱出判定
+          if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {
+            this.handleEscape()
+            break
+          }
+
+          // 力尽き判定
+          if (this.capturedHuman.lifeForce <= 0) {
+            this.capturedHuman.lifeForce = 0
+            this.state = 'releasing'
+          }
+        }
+
         // ゆっくり浮遊
         this.x += Math.sin(this.wobbleTime * 1.5 + this.wobbleOffset) * 0.15 * dt
         this.y += Math.cos(this.wobbleTime * 1.2 + this.wobbleOffset * 0.7) * 0.1 * dt
-
-        if (this.digestionTimer <= 0) {
-          this.state = 'releasing'
-        }
         break
       }
       case 'releasing': {
         // releasing は Simulation 側で処理してすぐ hunting に戻す
+        break
+      }
+      case 'stunned': {
+        // スタン中は移動しない
+        this.vx = 0
+        this.vy = 0
+        this.stunTimer -= dt
+        if (this.stunTimer <= 0) {
+          this.state = 'hunting'
+        }
         break
       }
     }
@@ -137,15 +164,36 @@ export class Ghost {
     return dist(this, human) < CAPTURE_DISTANCE + this.currentRadius * 0.3
   }
 
-  startDigestion(): void {
+  startFeeding(human: Human): void {
     this.state = 'digesting'
-    this.digestionDuration = rand(DIGESTION_TIME_MIN, DIGESTION_TIME_MAX)
-    this.digestionTimer = this.digestionDuration
+    this.capturedHuman = human
+    human.captured = true
+    human.escapeProgress = 0
     this.targetRadius = this.baseRadius * 1.5
+  }
+
+  handleEscape(): void {
+    if (this.capturedHuman) {
+      const human = this.capturedHuman
+      human.captured = false
+      // ランダム方向にはじき出す
+      const angle = rand(0, Math.PI * 2)
+      const escapeDist = this.currentRadius + 10
+      human.x = this.x + Math.cos(angle) * escapeDist
+      human.y = this.y + Math.sin(angle) * escapeDist
+      human.vx = Math.cos(angle) * 3
+      human.vy = Math.sin(angle) * 3
+      this.escapedHuman = human
+      this.capturedHuman = null
+    }
+    this.state = 'stunned'
+    this.stunTimer = STUN_DURATION
+    this.targetRadius = this.baseRadius
   }
 
   finishDigestion(): void {
     this.state = 'hunting'
+    this.capturedHuman = null
     this.targetRadius = this.baseRadius
   }
 
@@ -195,7 +243,13 @@ export class Ghost {
     ctx.save()
     ctx.translate(this.x, this.y + floatY)
     ctx.scale(scale, scale)
-    ctx.globalAlpha = this.opacity
+
+    // スタン中は点滅エフェクト
+    if (this.state === 'stunned') {
+      ctx.globalAlpha = this.opacity * (0.3 + Math.abs(Math.sin(time * 0.008)) * 0.5)
+    } else {
+      ctx.globalAlpha = this.opacity
+    }
 
     // おばけの体（丸い形状 + 下部の波形）
     ctx.fillStyle = this.color
@@ -224,14 +278,17 @@ export class Ghost {
     ctx.arc(0, -r * 0.2, r * 0.8, 0, Math.PI * 2)
     ctx.fill()
 
-    // 消化中: 内部にニンゲンのシルエット
-    if (this.state === 'digesting') {
-      const progress = 1 - this.digestionTimer / this.digestionDuration
-      const silAlpha = 0.3 * (1 - progress)
+    // 消化中: 内部にニンゲンのシルエット（もがきで揺れる）
+    if (this.state === 'digesting' && this.capturedHuman) {
+      const human = this.capturedHuman
+      const lifeRatio = human.lifeForce / 100
+      const silAlpha = 0.3 * lifeRatio
+      // もがき中はシルエットが揺れる（スタミナがある間）
+      const struggleShake = human.stamina > 0 ? Math.sin(time * 0.02) * r * 0.15 : 0
       ctx.globalAlpha = silAlpha
       ctx.fillStyle = '#3a2520'
       ctx.beginPath()
-      ctx.arc(0, r * 0.05, r * 0.35 * (1 - progress * 0.3), 0, Math.PI * 2)
+      ctx.arc(struggleShake, r * 0.05, r * 0.35 * (0.7 + lifeRatio * 0.3), 0, Math.PI * 2)
       ctx.fill()
       ctx.globalAlpha = this.opacity
     }

@@ -94,20 +94,35 @@ ghost-hunt-sim/
 
 | クラス | ファイル | 責務 |
 | ------ | -------- | ---- |
-| `Ghost` | `src/entities/Ghost.ts` | おばけエンティティ。状態管理（hunting/digesting/releasing）、最寄りニンゲン追跡、捕食、消化タイマー、描画 |
-| `Human` | `src/entities/Human.ts` | ニンゲンエンティティ。逃走行動、ランダム移動、簡易Boids群れ行動、壁反射、描画 |
+| `Ghost` | `src/entities/Ghost.ts` | おばけエンティティ。状態管理（hunting/digesting/releasing/stunned）、最寄りニンゲン追跡、捕食・生気吸収、もがき判定、描画 |
+| `Human` | `src/entities/Human.ts` | ニンゲンエンティティ。生気・スタミナ管理、逃走行動、疲労状態、もがき（捕食中）、ランダム移動、簡易Boids群れ行動、壁反射、描画 |
 | `Particle` | `src/entities/Particle.ts` | パーティクルエフェクト。霧/フラッシュ/星/ポップの4タイプ、ライフ管理 |
 | `Simulation` | `src/entities/Simulation.ts` | メインシミュレーション管理。エンティティ生成/更新/描画、捕食判定、終了判定、UI連携 |
 
 #### エンティティの状態遷移（Ghost）
 
 ```text
-hunting → [ニンゲンに接触] → digesting → [消化タイマー完了] → releasing → hunting
+hunting → [ニンゲンに接触] → digesting → [生気0] → releasing → hunting
+                                  ↓
+                          [脱出成功] → stunned → [スタンタイマー完了] → hunting
 ```
 
 - `hunting`: 最寄りニンゲンを追跡（sin波で横揺れしながら移動）
-- `digesting`: 移動停止、体が膨張、内部にニンゲンのシルエット表示、消化タイマー減算
-- `releasing`: 新おばけを生成して飛び出させる、自身は通常サイズに戻る
+- `digesting`: ゆっくり浮遊、体が膨張、生気を吸収、内部のニンゲンがもがく（シルエット揺れ）
+  - 生気が0になるとニンゲンが力尽き `releasing` に遷移
+  - ニンゲンの脱出進捗が閾値に達すると `stunned` に遷移（ニンゲンが解放される）
+- `releasing`: 新おばけを生成して飛び出させる、自身は通常サイズに戻り `hunting` に
+- `stunned`: 脱出されて一定時間動けない（点滅表示）、タイマー完了で `hunting` に復帰
+
+#### ニンゲンのステータス
+
+- **生気（lifeForce）**: 初期値 `MAX_LIFE_FORCE`。おばけの体内で吸収される。0で力尽きおばけ化。
+- **スタミナ（stamina）**: 初期値 `MAX_STAMINA`。逃走中に消費、非逃走中に回復。
+  - 実効最大値 = `MAX_STAMINA × (lifeForce / MAX_LIFE_FORCE)`（生気低下で上限減少）
+  - 0になると疲労状態（`isFatigued`）: 速度が `FATIGUE_SPEED_MULTIPLIER` 倍に低下
+  - 疲労は実効最大値まで回復しきるまで継続
+- **もがき（escapeProgress）**: 捕食中にスタミナを消費して蓄積。`ESCAPE_THRESHOLD` 到達で脱出成功。
+  - スタミナ0の間はもがけず進捗停止。
 
 #### 行動アルゴリズム
 
@@ -137,7 +152,11 @@ hunting → [ニンゲンに接触] → digesting → [消化タイマー完了]
 
 - 速度バランス（`GHOST_BASE_SPEED`, `HUMAN_BASE_SPEED`）
 - 捕食距離（`CAPTURE_DISTANCE`）
-- 消化時間（`DIGESTION_TIME_MIN/MAX`）
+- 生気吸収速度（`LIFE_FORCE_DRAIN_RATE`）
+- スタミナ消費/回復（`STAMINA_DRAIN_RATE`, `STAMINA_RECOVERY_RATE`）
+- 疲労時速度倍率（`FATIGUE_SPEED_MULTIPLIER`）
+- もがきパラメータ（`STRUGGLE_STAMINA_COST`, `ESCAPE_PROGRESS_RATE`, `ESCAPE_THRESHOLD`）
+- スタン時間（`STUN_DURATION`）
 - 視界半径（`HUMAN_VISION_RADIUS`）
 - 群れ行動の強度（`FLOCK_COHESION`, `FLOCK_SEPARATION`）
 

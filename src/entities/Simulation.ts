@@ -148,7 +148,7 @@ export class Simulation {
         if (ghost.checkCapture(this.humans[i])) {
           const human = this.humans[i]
           this.humans.splice(i, 1)
-          ghost.startDigestion()
+          ghost.startFeeding(human)
 
           // フラッシュエフェクト
           this.particles.push(new Particle(human.x, human.y, 'flash', '#ffffff'))
@@ -188,6 +188,24 @@ export class Simulation {
       }
     }
 
+    // 脱出したニンゲンを回収して humans 配列に復帰
+    for (const ghost of this.ghosts) {
+      if (ghost.escapedHuman) {
+        const human = ghost.escapedHuman
+        this.humans.push(human)
+        ghost.escapedHuman = null
+
+        // 脱出エフェクト（星パーティクル）
+        for (let j = 0; j < 5; j++) {
+          const colors = ['#ffee88', '#ffffff', '#88ffaa']
+          this.particles.push(
+            new Particle(human.x, human.y, 'star', colors[randInt(0, colors.length - 1)]),
+          )
+        }
+        this.particles.push(new Particle(ghost.x, ghost.y, 'flash', '#ffaa44'))
+      }
+    }
+
     // ニンゲン更新
     for (const human of this.humans) {
       human.update(this.ghosts, this.humans, dt, this.width, this.height)
@@ -212,8 +230,9 @@ export class Simulation {
       }
     }
 
-    // 終了判定
-    if (this.humans.length === 0 && this.state === 'running') {
+    // 終了判定（自由なニンゲンがおらず、消化中のおばけもいない場合に終了）
+    const hasDigesting = this.ghosts.some((g) => g.state === 'digesting')
+    if (this.humans.length === 0 && !hasDigesting && this.state === 'running') {
       this.state = 'finished'
       this.ui.endOverlay.classList.add('visible')
       this.ui.endStats.textContent =

@@ -13,8 +13,24 @@ export const GHOST_BASE_SPEED = HUMAN_BASE_SPEED * GHOST_SPEED_RATIO
 
 // 捕食パラメータ
 export const CAPTURE_DISTANCE = 18
-export const DIGESTION_TIME_MIN = 3000
-export const DIGESTION_TIME_MAX = 5000
+
+// 生気パラメータ
+export const MAX_LIFE_FORCE = 100
+export const LIFE_FORCE_DRAIN_RATE = 0.5
+
+// スタミナパラメータ
+export const MAX_STAMINA = 100
+export const STAMINA_DRAIN_RATE = 0.4
+export const STAMINA_RECOVERY_RATE = 0.3
+export const FATIGUE_SPEED_MULTIPLIER = 0.3
+
+// もがき・脱出パラメータ
+export const STRUGGLE_STAMINA_COST = 0.8
+export const ESCAPE_PROGRESS_RATE = 0.5
+export const ESCAPE_THRESHOLD = 100
+
+// おばけスタンパラメータ
+export const STUN_DURATION = 120
 
 // ニンゲン視界・群れ行動
 export const HUMAN_VISION_RADIUS = 150
