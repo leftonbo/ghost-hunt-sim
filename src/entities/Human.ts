@@ -7,6 +7,8 @@ import {
   FLOCK_COHESION,
   FLOCK_SEPARATION,
   WALL_MARGIN,
+  WALL_AVOIDANCE_RADIUS,
+  WALL_AVOIDANCE_STRENGTH,
 } from '../core/constants'
 import { rand, dist, normalize, pickHumanColor } from '../core/utils'
 
@@ -91,6 +93,9 @@ export class Human {
       }
     }
 
+    // 壁回避ステアリング（壁に近づくと離れる方向に力を加える）
+    this.applyWallAvoidance(canvasW, canvasH, speed, dt)
+
     this.x += this.vx * dt
     this.y += this.vy * dt
 
@@ -135,6 +140,37 @@ export class Human {
 
     this.vx += sepX * FLOCK_SEPARATION * dt
     this.vy += sepY * FLOCK_SEPARATION * dt
+  }
+
+  applyWallAvoidance(w: number, h: number, speed: number, dt: number): void {
+    const m = WALL_MARGIN + HUMAN_RADIUS
+    let avoidVx = 0
+    let avoidVy = 0
+
+    const distLeft = this.x - m
+    const distRight = w - m - this.x
+    const distTop = this.y - m
+    const distBottom = h - m - this.y
+
+    if (distLeft < WALL_AVOIDANCE_RADIUS && distLeft >= 0) {
+      const strength = 1 - distLeft / WALL_AVOIDANCE_RADIUS
+      avoidVx += strength * strength
+    }
+    if (distRight < WALL_AVOIDANCE_RADIUS && distRight >= 0) {
+      const strength = 1 - distRight / WALL_AVOIDANCE_RADIUS
+      avoidVx -= strength * strength
+    }
+    if (distTop < WALL_AVOIDANCE_RADIUS && distTop >= 0) {
+      const strength = 1 - distTop / WALL_AVOIDANCE_RADIUS
+      avoidVy += strength * strength
+    }
+    if (distBottom < WALL_AVOIDANCE_RADIUS && distBottom >= 0) {
+      const strength = 1 - distBottom / WALL_AVOIDANCE_RADIUS
+      avoidVy -= strength * strength
+    }
+
+    this.vx += avoidVx * WALL_AVOIDANCE_STRENGTH * speed * dt
+    this.vy += avoidVy * WALL_AVOIDANCE_STRENGTH * speed * dt
   }
 
   bounceOffWalls(w: number, h: number): void {

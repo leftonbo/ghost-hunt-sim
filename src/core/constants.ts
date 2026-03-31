@@ -48,3 +48,7 @@ export const BG_COLOR_BOTTOM = '#0d1b3e'
 
 // 壁マージン
 export const WALL_MARGIN = 10
+
+// 壁回避ステアリング
+export const WALL_AVOIDANCE_RADIUS = 60
+export const WALL_AVOIDANCE_STRENGTH = 1.5
