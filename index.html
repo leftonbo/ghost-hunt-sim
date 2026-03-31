@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👻 おばけ捕食シミュレーター</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0d0a1a;
+    color: #e0d8f0;
+    font-family: 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #info-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 10px 16px;
+    background: rgba(20, 12, 40, 0.92);
+    border-bottom: 1px solid rgba(140, 100, 255, 0.25);
+    font-size: 15px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    z-index: 10;
+  }
+
+  #info-panel .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #info-panel .stat .label { opacity: 0.7; font-size: 13px; }
+  #info-panel .stat .value { font-weight: bold; font-size: 17px; min-width: 28px; text-align: right; }
+
+  #canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  #end-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 5, 25, 0.75);
+    z-index: 20;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #end-overlay.visible { display: flex; }
+
+  #end-overlay .end-title {
+    font-size: 36px;
+    text-shadow: 0 0 20px rgba(160, 100, 255, 0.7);
+  }
+
+  #end-overlay .end-stats {
+    font-size: 18px;
+    opacity: 0.8;
+  }
+
+  #control-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 10px 16px;
+    background: rgba(20, 12, 40, 0.92);
+    border-top: 1px solid rgba(140, 100, 255, 0.25);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    z-index: 10;
+  }
+
+  button {
+    background: rgba(100, 60, 200, 0.35);
+    color: #e0d8f0;
+    border: 1px solid rgba(140, 100, 255, 0.4);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  button:hover { background: rgba(120, 80, 220, 0.55); }
+  button:active { background: rgba(140, 100, 240, 0.7); }
+
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  .slider-group label { opacity: 0.7; white-space: nowrap; }
+  .slider-group .slider-value { min-width: 32px; text-align: right; font-weight: bold; font-size: 14px; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px;
+    height: 6px;
+    background: rgba(140, 100, 255, 0.3);
+    border-radius: 3px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #a080f0;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #a080f0;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- 情報パネル -->
+<div id="info-panel">
+  <div class="stat"><span class="label">👻 おばけ:</span><span class="value" id="ghost-count">0</span></div>
+  <div class="stat"><span class="label">🧑 ニンゲン:</span><span class="value" id="human-count">0</span></div>
+  <div class="stat"><span class="label">🫃 消化中:</span><span class="value" id="digesting-count">0</span></div>
+  <div class="stat"><span class="label">⏱️ 経過:</span><span class="value" id="elapsed-time">0:00</span></div>
+</div>
+
+<!-- キャンバス -->
+<div id="canvas-container">
+  <canvas id="sim-canvas"></canvas>
+  <div id="end-overlay">
+    <div class="end-title">👻 おばけの世界になりました！</div>
+    <div class="end-stats" id="end-stats"></div>
+  </div>
+</div>
+
+<!-- 操作パネル -->
+<div id="control-panel">
+  <button id="btn-start">▶ 開始</button>
+  <button id="btn-pause" disabled>⏸ 一時停止</button>
+  <button id="btn-reset">🔄 リセット</button>
+
+  <div class="slider-group">
+    <label>👻 初期おばけ:</label>
+    <input type="range" id="slider-ghosts" min="1" max="10" value="1">
+    <span class="slider-value" id="val-ghosts">1</span>
+  </div>
+
+  <div class="slider-group">
+    <label>🧑 初期ニンゲン:</label>
+    <input type="range" id="slider-humans" min="5" max="100" value="30">
+    <span class="slider-value" id="val-humans">30</span>
+  </div>
+
+  <div class="slider-group">
+    <label>⚡ 速度:</label>
+    <input type="range" id="slider-speed" min="5" max="30" value="10">
+    <span class="slider-value" id="val-speed">1.0x</span>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 定数
+// ============================================================
+const DEFAULT_GHOST_COUNT = 1;
+const DEFAULT_HUMAN_COUNT = 30;
+
+const HUMAN_BASE_SPEED = 2.5;
+const GHOST_BASE_SPEED = HUMAN_BASE_SPEED * 0.8; // ニンゲンの0.8倍
+const GHOST_SPEED_RATIO = 0.8;
+
+const CAPTURE_DISTANCE = 18;
+const DIGESTION_TIME_MIN = 3000;
+const DIGESTION_TIME_MAX = 5000;
+
+const HUMAN_VISION_RADIUS = 150;
+const HUMAN_FLOCK_RADIUS = 80;
+const FLOCK_COHESION = 0.015;
+const FLOCK_SEPARATION = 0.05;
+const FLOCK_ALIGNMENT = 0.02;
+
+const GHOST_BASE_RADIUS = 18;
+const HUMAN_RADIUS = 7;
+const GHOST_WOBBLE_AMPLITUDE = 3;
+const GHOST_WOBBLE_SPEED = 3.0;
+
+const GHOST_COLORS_HSL = [
+  [220, 60, 70], // 青白い
+  [260, 50, 65], // 紫
+  [280, 45, 60], // 深紫
+  [140, 40, 60], // 緑
+  [350, 50, 65], // 赤
+  [190, 50, 65], // シアン
+];
+
+const HUMAN_HUE_MIN = 15;
+const HUMAN_HUE_MAX = 45;
+
+const BG_COLOR_TOP = '#1a0a2e';
+const BG_COLOR_BOTTOM = '#0d1b3e';
+
+const WALL_MARGIN = 10;
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function normalize(vx, vy) {
+  const len = Math.hypot(vx, vy);
+  if (len === 0) return { x: 0, y: 0 };
+  return { x: vx / len, y: vy / len };
+}
+
+function pickGhostColor() {
+  const c = GHOST_COLORS_HSL[randInt(0, GHOST_COLORS_HSL.length - 1)];
+  const h = c[0] + rand(-15, 15);
+  const s = c[1] + rand(-10, 10);
+  const l = c[2] + rand(-8, 8);
+  return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
+function pickHumanColor() {
+  const h = rand(HUMAN_HUE_MIN, HUMAN_HUE_MAX);
+  const s = rand(45, 70);
+  const l = rand(55, 75);
+  return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
+function formatTime(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// ============================================================
+// Particle クラス
+// ============================================================
+class Particle {
+  constructor(x, y, type, color) {
+    this.x = x;
+    this.y = y;
+    this.type = type; // 'mist' | 'flash' | 'star' | 'pop'
+    this.color = color || 'rgba(200,180,255,0.3)';
+    this.life = 1.0;
+    this.maxLife = 1.0;
+    this.size = 4;
+    this.vx = 0;
+    this.vy = 0;
+    this.decay = 0.02;
+
+    switch (type) {
+      case 'mist':
+        this.size = rand(8, 20);
+        this.vx = rand(-0.3, 0.3);
+        this.vy = rand(-0.5, -0.1);
+        this.decay = rand(0.005, 0.015);
+        break;
+      case 'flash':
+        this.size = 5;
+        this.maxSize = 60;
+        this.decay = 0.06;
+        break;
+      case 'star':
+        this.size = rand(3, 6);
+        const angle = rand(0, Math.PI * 2);
+        const speed = rand(1.5, 4);
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.decay = rand(0.02, 0.04);
+        this.rotation = rand(0, Math.PI * 2);
+        break;
+      case 'pop':
+        this.size = rand(10, 25);
+        this.decay = 0.04;
+        break;
+    }
+  }
+
+  update(dt) {
+    this.life -= this.decay * dt;
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+
+    if (this.type === 'flash') {
+      this.size = this.maxSize * (1 - this.life);
+    }
+
+    if (this.type === 'star') {
+      this.vx *= (1 - 0.02 * dt);
+      this.vy *= (1 - 0.02 * dt);
+    }
+
+    return this.life > 0;
+  }
+
+  draw(ctx) {
+    if (this.life <= 0) return;
+    const alpha = Math.max(0, this.life);
+
+    ctx.save();
+    switch (this.type) {
+      case 'mist': {
+        ctx.globalAlpha = alpha * 0.25;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'flash': {
+        ctx.globalAlpha = alpha * 0.5;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'star': {
+        ctx.globalAlpha = alpha * 0.9;
+        ctx.fillStyle = this.color;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        // 十字形
+        const s = this.size;
+        ctx.fillRect(-s, -s * 0.25, s * 2, s * 0.5);
+        ctx.fillRect(-s * 0.25, -s, s * 0.5, s * 2);
+        break;
+      }
+      case 'pop': {
+        ctx.globalAlpha = alpha * 0.6;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        const r = this.size * (1 + (1 - alpha) * 1.5);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+        break;
+      }
+    }
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// Ghost クラス
+// ============================================================
+class Ghost {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.color = pickGhostColor();
+    this.baseRadius = GHOST_BASE_RADIUS;
+    this.currentRadius = GHOST_BASE_RADIUS;
+    this.targetRadius = GHOST_BASE_RADIUS;
+    this.state = 'hunting'; // 'hunting' | 'digesting' | 'releasing'
+    this.digestionTimer = 0;
+    this.digestionDuration = 0;
+    this.wobbleOffset = rand(0, Math.PI * 2);
+    this.wobbleTime = 0;
+    this.opacity = rand(0.55, 0.8);
+    this.spawnScale = 0; // 出現時のアニメーション (0→1)
+    this.mistTimer = 0;
+  }
+
+  update(humans, dt, time, canvasW, canvasH) {
+    this.wobbleTime += dt * 0.016;
+
+    // 出現アニメーション
+    if (this.spawnScale < 1) {
+      this.spawnScale = Math.min(1, this.spawnScale + 0.04 * dt);
+    }
+
+    // 半径の補間
+    this.currentRadius += (this.targetRadius - this.currentRadius) * 0.08 * dt;
+
+    switch (this.state) {
+      case 'hunting': {
+        const target = this.findNearestHuman(humans);
+        if (target) {
+          const dx = target.x - this.x;
+          const dy = target.y - this.y;
+          const n = normalize(dx, dy);
+          const speed = GHOST_BASE_SPEED;
+          // sin波で横揺れ
+          const wobble = Math.sin(this.wobbleTime * GHOST_WOBBLE_SPEED + this.wobbleOffset) * GHOST_WOBBLE_AMPLITUDE;
+          // 進行方向に垂直な方向にゆらぎ
+          const perpX = -n.y;
+          const perpY = n.x;
+          this.vx = n.x * speed + perpX * wobble * 0.3;
+          this.vy = n.y * speed + perpY * wobble * 0.3;
+        } else {
+          // ニンゲンがいない → ゆらゆら浮遊
+          this.vx *= 0.95;
+          this.vy *= 0.95;
+        }
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        break;
+      }
+      case 'digesting': {
+        this.digestionTimer -= 16.67 * dt; // ms換算（dtに速度倍率含む）
+        // ゆっくり浮遊
+        this.x += Math.sin(this.wobbleTime * 1.5 + this.wobbleOffset) * 0.15 * dt;
+        this.y += Math.cos(this.wobbleTime * 1.2 + this.wobbleOffset * 0.7) * 0.1 * dt;
+
+        if (this.digestionTimer <= 0) {
+          this.state = 'releasing';
+        }
+        break;
+      }
+      case 'releasing': {
+        // releasing は Simulation 側で処理してすぐ hunting に戻す
+        break;
+      }
+    }
+
+    // 壁反射
+    this.bounceOffWalls(canvasW, canvasH);
+  }
+
+  findNearestHuman(humans) {
+    let nearest = null;
+    let minD = Infinity;
+    for (const h of humans) {
+      const d = dist(this, h);
+      if (d < minD) {
+        minD = d;
+        nearest = h;
+      }
+    }
+    return nearest;
+  }
+
+  checkCapture(human) {
+    return dist(this, human) < CAPTURE_DISTANCE + this.currentRadius * 0.3;
+  }
+
+  startDigestion() {
+    this.state = 'digesting';
+    this.digestionDuration = rand(DIGESTION_TIME_MIN, DIGESTION_TIME_MAX);
+    this.digestionTimer = this.digestionDuration;
+    this.targetRadius = this.baseRadius * 1.5;
+  }
+
+  finishDigestion() {
+    this.state = 'hunting';
+    this.targetRadius = this.baseRadius;
+  }
+
+  bounceOffWalls(w, h) {
+    const m = WALL_MARGIN + this.currentRadius;
+    if (this.x < m) { this.x = m; this.vx = Math.abs(this.vx) * 0.5; }
+    if (this.x > w - m) { this.x = w - m; this.vx = -Math.abs(this.vx) * 0.5; }
+    if (this.y < m) { this.y = m; this.vy = Math.abs(this.vy) * 0.5; }
+    if (this.y > h - m) { this.y = h - m; this.vy = -Math.abs(this.vy) * 0.5; }
+  }
+
+  draw(ctx, time) {
+    const scale = this.spawnScale;
+    if (scale <= 0) return;
+
+    const r = this.currentRadius * scale;
+    const floatY = Math.sin(time * 0.002 + this.wobbleOffset) * GHOST_WOBBLE_AMPLITUDE;
+
+    ctx.save();
+    ctx.translate(this.x, this.y + floatY);
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = this.opacity;
+
+    // おばけの体（丸い形状 + 下部の波形）
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.15, r, Math.PI, 0, false);
+    // 下部の波形スカート
+    const waveCount = 5;
+    const waveW = (r * 2) / waveCount;
+    const baseY = -r * 0.15 + r * 0.6;
+    ctx.lineTo(r, baseY);
+    for (let i = waveCount; i > 0; i--) {
+      const wx = r - (waveCount - i) * waveW - waveW * 0.5;
+      const wy = baseY + r * 0.3;
+      const wx2 = r - (waveCount - i + 1) * waveW;
+      ctx.quadraticCurveTo(wx, wy, wx2, baseY);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    // 内部グロウ
+    const glow = ctx.createRadialGradient(0, -r * 0.2, 0, 0, -r * 0.2, r * 0.8);
+    glow.addColorStop(0, 'rgba(255,255,255,0.15)');
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.2, r * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 消化中: 内部にニンゲンのシルエット
+    if (this.state === 'digesting') {
+      const progress = 1 - (this.digestionTimer / this.digestionDuration);
+      const silAlpha = 0.3 * (1 - progress);
+      ctx.globalAlpha = silAlpha;
+      ctx.fillStyle = '#3a2520';
+      ctx.beginPath();
+      ctx.arc(0, r * 0.05, r * 0.35 * (1 - progress * 0.3), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = this.opacity;
+    }
+
+    // 目
+    const eyeY = -r * 0.3;
+    const eyeSpacing = r * 0.35;
+    const eyeR = r * 0.18;
+    ctx.fillStyle = '#ffffff';
+    ctx.globalAlpha = 0.9 * scale;
+    ctx.beginPath();
+    ctx.ellipse(-eyeSpacing, eyeY, eyeR, eyeR * 1.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(eyeSpacing, eyeY, eyeR, eyeR * 1.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 瞳
+    ctx.fillStyle = '#1a0a2e';
+    ctx.globalAlpha = 1.0 * scale;
+    const pupilR = eyeR * 0.5;
+    ctx.beginPath();
+    ctx.arc(-eyeSpacing + pupilR * 0.2, eyeY + pupilR * 0.15, pupilR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(eyeSpacing + pupilR * 0.2, eyeY + pupilR * 0.15, pupilR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 口（にっこり）
+    ctx.globalAlpha = 0.7 * scale;
+    ctx.strokeStyle = '#1a0a2e';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const mouthW = r * 0.3;
+    const mouthY = eyeY + r * 0.4;
+    ctx.arc(0, mouthY - r * 0.1, mouthW, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// Human クラス
+// ============================================================
+class Human {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.vx = rand(-0.5, 0.5);
+    this.vy = rand(-0.5, 0.5);
+    this.color = pickHumanColor();
+    this.wanderAngle = rand(0, Math.PI * 2);
+    this.wanderTimer = 0;
+    this.legPhase = rand(0, Math.PI * 2);
+    this.fleeing = false;
+  }
+
+  update(ghosts, humans, dt, canvasW, canvasH) {
+    const speed = HUMAN_BASE_SPEED;
+
+    // おばけ検知
+    let fleeVx = 0;
+    let fleeVy = 0;
+    let threatened = false;
+
+    for (const g of ghosts) {
+      if (g.state !== 'hunting') continue;
+      const d = dist(this, g);
+      if (d < HUMAN_VISION_RADIUS && d > 0) {
+        const dx = this.x - g.x;
+        const dy = this.y - g.y;
+        const urgency = 1 - (d / HUMAN_VISION_RADIUS);
+        fleeVx += (dx / d) * urgency;
+        fleeVy += (dy / d) * urgency;
+        threatened = true;
+      }
+    }
+
+    this.fleeing = threatened;
+
+    if (threatened) {
+      // 逃走
+      const n = normalize(fleeVx, fleeVy);
+      this.vx += n.x * speed * 0.3 * dt;
+      this.vy += n.y * speed * 0.3 * dt;
+      // 速度制限
+      const currentSpeed = Math.hypot(this.vx, this.vy);
+      if (currentSpeed > speed) {
+        this.vx = (this.vx / currentSpeed) * speed;
+        this.vy = (this.vy / currentSpeed) * speed;
+      }
+    } else {
+      // ランダム移動 + 群れ行動
+      this.wanderTimer -= dt;
+      if (this.wanderTimer <= 0) {
+        this.wanderAngle += rand(-0.8, 0.8);
+        this.wanderTimer = rand(30, 90);
+      }
+
+      const wanderSpeed = speed * 0.3;
+      this.vx += Math.cos(this.wanderAngle) * wanderSpeed * 0.05 * dt;
+      this.vy += Math.sin(this.wanderAngle) * wanderSpeed * 0.05 * dt;
+
+      // 群れ行動
+      this.applyFlocking(humans, dt);
+
+      // 速度制限（ゆっくり）
+      const currentSpeed = Math.hypot(this.vx, this.vy);
+      const maxWander = speed * 0.4;
+      if (currentSpeed > maxWander) {
+        this.vx = (this.vx / currentSpeed) * maxWander;
+        this.vy = (this.vy / currentSpeed) * maxWander;
+      }
+    }
+
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+
+    // 足のアニメ
+    const moveSpeed = Math.hypot(this.vx, this.vy);
+    this.legPhase += moveSpeed * 0.15 * dt;
+
+    // 壁反射
+    this.bounceOffWalls(canvasW, canvasH);
+  }
+
+  applyFlocking(humans, dt) {
+    let cohX = 0, cohY = 0, cohCount = 0;
+    let sepX = 0, sepY = 0;
+
+    for (const other of humans) {
+      if (other === this) continue;
+      const d = dist(this, other);
+      if (d < HUMAN_FLOCK_RADIUS && d > 0) {
+        // Cohesion
+        cohX += other.x;
+        cohY += other.y;
+        cohCount++;
+
+        // Separation
+        if (d < HUMAN_FLOCK_RADIUS * 0.4) {
+          sepX += (this.x - other.x) / d;
+          sepY += (this.y - other.y) / d;
+        }
+      }
+    }
+
+    if (cohCount > 0) {
+      cohX = cohX / cohCount - this.x;
+      cohY = cohY / cohCount - this.y;
+      this.vx += cohX * FLOCK_COHESION * dt;
+      this.vy += cohY * FLOCK_COHESION * dt;
+    }
+
+    this.vx += sepX * FLOCK_SEPARATION * dt;
+    this.vy += sepY * FLOCK_SEPARATION * dt;
+  }
+
+  bounceOffWalls(w, h) {
+    const m = WALL_MARGIN + HUMAN_RADIUS;
+    if (this.x < m) { this.x = m; this.vx = Math.abs(this.vx); this.wanderAngle = rand(-Math.PI / 2, Math.PI / 2); }
+    if (this.x > w - m) { this.x = w - m; this.vx = -Math.abs(this.vx); this.wanderAngle = rand(Math.PI / 2, Math.PI * 1.5); }
+    if (this.y < m) { this.y = m; this.vy = Math.abs(this.vy); this.wanderAngle = rand(0, Math.PI); }
+    if (this.y > h - m) { this.y = h - m; this.vy = -Math.abs(this.vy); this.wanderAngle = rand(-Math.PI, 0); }
+  }
+
+  draw(ctx) {
+    const r = HUMAN_RADIUS;
+    const x = this.x;
+    const y = this.y;
+    const legSwing = Math.sin(this.legPhase) * (this.fleeing ? 5 : 3);
+
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+
+    // 体
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r * 0.7, r * 1.0, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 頭
+    ctx.beginPath();
+    ctx.arc(x, y - r * 1.4, r * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 足
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.3, y + r * 0.8);
+    ctx.lineTo(x - r * 0.3 + legSwing * 0.4, y + r * 1.8);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + r * 0.3, y + r * 0.8);
+    ctx.lineTo(x + r * 0.3 - legSwing * 0.4, y + r * 1.8);
+    ctx.stroke();
+
+    // 腕
+    const armSwing = legSwing * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.7, y - r * 0.2);
+    ctx.lineTo(x - r * 1.3 - armSwing * 0.3, y + r * 0.5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + r * 0.7, y - r * 0.2);
+    ctx.lineTo(x + r * 1.3 + armSwing * 0.3, y + r * 0.5);
+    ctx.stroke();
+
+    // 目（白い点）
+    ctx.fillStyle = '#ffffff';
+    ctx.globalAlpha = 0.8;
+    const eyeSize = r * 0.18;
+    ctx.beginPath();
+    ctx.arc(x - r * 0.2, y - r * 1.5, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + r * 0.2, y - r * 1.5, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 逃走中は汗マーク
+    if (this.fleeing) {
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = '#88ccff';
+      ctx.font = `${r * 1.2}px sans-serif`;
+      ctx.fillText('💧', x + r * 0.8, y - r * 1.2);
+    }
+
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// Simulation クラス
+// ============================================================
+class Simulation {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.ghosts = [];
+    this.humans = [];
+    this.particles = [];
+    this.state = 'idle'; // 'idle' | 'running' | 'paused' | 'finished'
+    this.elapsedTime = 0;
+    this.speedMultiplier = 1.0;
+    this.lastTimestamp = 0;
+    this.animFrameId = null;
+    this.bgGradient = null;
+
+    this.ghostCountInit = DEFAULT_GHOST_COUNT;
+    this.humanCountInit = DEFAULT_HUMAN_COUNT;
+
+    this.resize();
+  }
+
+  resize() {
+    const container = this.canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    this.canvas.width = w * dpr;
+    this.canvas.height = h * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.width = w;
+    this.height = h;
+
+    // 背景グラデーション
+    this.bgGradient = this.ctx.createLinearGradient(0, 0, 0, h);
+    this.bgGradient.addColorStop(0, BG_COLOR_TOP);
+    this.bgGradient.addColorStop(1, BG_COLOR_BOTTOM);
+  }
+
+  init() {
+    this.ghosts = [];
+    this.humans = [];
+    this.particles = [];
+    this.elapsedTime = 0;
+    this.state = 'idle';
+
+    const margin = 60;
+
+    for (let i = 0; i < this.ghostCountInit; i++) {
+      const g = new Ghost(
+        rand(margin, this.width - margin),
+        rand(margin, this.height - margin)
+      );
+      g.spawnScale = 1; // 初期配置は即表示
+      this.ghosts.push(g);
+    }
+
+    for (let i = 0; i < this.humanCountInit; i++) {
+      this.humans.push(new Human(
+        rand(margin, this.width - margin),
+        rand(margin, this.height - margin)
+      ));
+    }
+
+    this.updateUI();
+    this.drawFrame(0);
+  }
+
+  start() {
+    if (this.state === 'finished') return;
+    if (this.state === 'idle' || this.state === 'paused') {
+      this.state = 'running';
+      this.lastTimestamp = performance.now();
+      this.loop();
+    }
+  }
+
+  pause() {
+    if (this.state === 'running') {
+      this.state = 'paused';
+      if (this.animFrameId) {
+        cancelAnimationFrame(this.animFrameId);
+        this.animFrameId = null;
+      }
+    } else if (this.state === 'paused') {
+      this.start();
+    }
+  }
+
+  reset() {
+    this.state = 'idle';
+    if (this.animFrameId) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
+    document.getElementById('end-overlay').classList.remove('visible');
+    this.init();
+  }
+
+  loop() {
+    if (this.state !== 'running') return;
+    this.animFrameId = requestAnimationFrame((ts) => {
+      const rawDt = ts - this.lastTimestamp;
+      this.lastTimestamp = ts;
+      // dt をフレーム単位に正規化（16.67ms = 1フレーム）、上限キャップ
+      const dt = Math.min(rawDt / 16.67, 3) * this.speedMultiplier;
+
+      this.elapsedTime += rawDt * this.speedMultiplier;
+      this.update(dt, ts);
+      this.drawFrame(ts);
+      this.updateUI();
+      this.loop();
+    });
+  }
+
+  update(dt, time) {
+    // ゴースト更新
+    for (const ghost of this.ghosts) {
+      ghost.update(this.humans, dt, time, this.width, this.height);
+    }
+
+    // 捕食判定
+    for (const ghost of this.ghosts) {
+      if (ghost.state !== 'hunting') continue;
+      for (let i = this.humans.length - 1; i >= 0; i--) {
+        if (ghost.checkCapture(this.humans[i])) {
+          const human = this.humans[i];
+          this.humans.splice(i, 1);
+          ghost.startDigestion();
+
+          // フラッシュエフェクト
+          this.particles.push(new Particle(human.x, human.y, 'flash', '#ffffff'));
+
+          break; // 1フレームで1体のみ捕食
+        }
+      }
+    }
+
+    // 消化完了 → 新おばけ生成
+    for (const ghost of this.ghosts) {
+      if (ghost.state === 'releasing') {
+        ghost.finishDigestion();
+
+        // 新おばけを生成
+        const angle = rand(0, Math.PI * 2);
+        const spawnDist = ghost.baseRadius * 2;
+        const newGhost = new Ghost(
+          ghost.x + Math.cos(angle) * spawnDist,
+          ghost.y + Math.sin(angle) * spawnDist
+        );
+        newGhost.spawnScale = 0;
+        newGhost.vx = Math.cos(angle) * 3;
+        newGhost.vy = Math.sin(angle) * 3;
+        this.ghosts.push(newGhost);
+
+        // 星パーティクル
+        for (let j = 0; j < 7; j++) {
+          const colors = ['#ffee88', '#ffffff', '#ffcc44', '#aaddff'];
+          this.particles.push(new Particle(
+            newGhost.x, newGhost.y, 'star',
+            colors[randInt(0, colors.length - 1)]
+          ));
+        }
+
+        // ポップエフェクト
+        this.particles.push(new Particle(ghost.x, ghost.y, 'pop', ghost.color));
+      }
+    }
+
+    // ニンゲン更新
+    for (const human of this.humans) {
+      human.update(this.ghosts, this.humans, dt, this.width, this.height);
+    }
+
+    // パーティクル更新
+    this.particles = this.particles.filter(p => p.update(dt));
+
+    // 霧パーティクル生成（おばけごと）
+    for (const ghost of this.ghosts) {
+      ghost.mistTimer -= dt;
+      if (ghost.mistTimer <= 0) {
+        ghost.mistTimer = rand(8, 15);
+        this.particles.push(new Particle(
+          ghost.x + rand(-ghost.currentRadius, ghost.currentRadius),
+          ghost.y + rand(-ghost.currentRadius * 0.5, ghost.currentRadius * 0.8),
+          'mist',
+          ghost.color
+        ));
+      }
+    }
+
+    // 終了判定
+    if (this.humans.length === 0 && this.state === 'running') {
+      this.state = 'finished';
+      const overlay = document.getElementById('end-overlay');
+      overlay.classList.add('visible');
+      document.getElementById('end-stats').textContent =
+        `おばけ ${this.ghosts.length} 体 ・ 経過時間 ${formatTime(this.elapsedTime)}`;
+      // 終了後もアニメーションは続ける
+      this.loopFinished();
+    }
+  }
+
+  loopFinished() {
+    this.animFrameId = requestAnimationFrame((ts) => {
+      const rawDt = ts - this.lastTimestamp;
+      this.lastTimestamp = ts;
+      const dt = Math.min(rawDt / 16.67, 3);
+
+      // おばけだけゆらゆら動かす
+      for (const ghost of this.ghosts) {
+        ghost.wobbleTime += dt * 0.016;
+        ghost.x += Math.sin(ghost.wobbleTime * 1.5 + ghost.wobbleOffset) * 0.3 * dt;
+        ghost.y += Math.cos(ghost.wobbleTime * 1.2 + ghost.wobbleOffset * 0.7) * 0.2 * dt;
+        ghost.bounceOffWalls(this.width, this.height);
+        if (ghost.spawnScale < 1) ghost.spawnScale = Math.min(1, ghost.spawnScale + 0.04 * dt);
+        ghost.mistTimer -= dt;
+        if (ghost.mistTimer <= 0) {
+          ghost.mistTimer = rand(8, 15);
+          this.particles.push(new Particle(
+            ghost.x + rand(-ghost.currentRadius, ghost.currentRadius),
+            ghost.y + rand(-ghost.currentRadius * 0.5, ghost.currentRadius * 0.8),
+            'mist', ghost.color
+          ));
+        }
+      }
+      this.particles = this.particles.filter(p => p.update(dt));
+      this.drawFrame(ts);
+      this.loopFinished();
+    });
+  }
+
+  drawFrame(time) {
+    const ctx = this.ctx;
+    const w = this.width;
+    const h = this.height;
+
+    // 背景
+    ctx.fillStyle = this.bgGradient;
+    ctx.fillRect(0, 0, w, h);
+
+    // 霧パーティクル（エンティティの裏）
+    for (const p of this.particles) {
+      if (p.type === 'mist') p.draw(ctx);
+    }
+
+    // ニンゲン描画
+    for (const human of this.humans) {
+      human.draw(ctx);
+    }
+
+    // ゴースト描画
+    for (const ghost of this.ghosts) {
+      ghost.draw(ctx, time);
+    }
+
+    // エフェクトパーティクル（エンティティの表）
+    for (const p of this.particles) {
+      if (p.type !== 'mist') p.draw(ctx);
+    }
+  }
+
+  updateUI() {
+    document.getElementById('ghost-count').textContent = this.ghosts.length;
+    document.getElementById('human-count').textContent = this.humans.length;
+    document.getElementById('digesting-count').textContent =
+      this.ghosts.filter(g => g.state === 'digesting').length;
+    document.getElementById('elapsed-time').textContent = formatTime(this.elapsedTime);
+  }
+}
+
+// ============================================================
+// 初期化・UIバインディング
+// ============================================================
+const canvas = document.getElementById('sim-canvas');
+const sim = new Simulation(canvas);
+
+// ボタン
+const btnStart = document.getElementById('btn-start');
+const btnPause = document.getElementById('btn-pause');
+const btnReset = document.getElementById('btn-reset');
+
+btnStart.addEventListener('click', () => {
+  if (sim.state === 'idle') {
+    sim.init();
+    sim.start();
+    btnStart.disabled = true;
+    btnPause.disabled = false;
+  } else if (sim.state === 'finished') {
+    // 終了後に開始ボタンを押したらリセット＆開始
+    sim.reset();
+    sim.start();
+    btnStart.disabled = true;
+    btnPause.disabled = false;
+  }
+});
+
+btnPause.addEventListener('click', () => {
+  if (sim.state === 'running') {
+    sim.pause();
+    btnPause.textContent = '▶ 再開';
+  } else if (sim.state === 'paused') {
+    sim.pause(); // toggles back to running
+    btnPause.textContent = '⏸ 一時停止';
+  }
+});
+
+btnReset.addEventListener('click', () => {
+  sim.reset();
+  btnStart.disabled = false;
+  btnPause.disabled = true;
+  btnPause.textContent = '⏸ 一時停止';
+});
+
+// スライダー
+const sliderGhosts = document.getElementById('slider-ghosts');
+const sliderHumans = document.getElementById('slider-humans');
+const sliderSpeed = document.getElementById('slider-speed');
+const valGhosts = document.getElementById('val-ghosts');
+const valHumans = document.getElementById('val-humans');
+const valSpeed = document.getElementById('val-speed');
+
+sliderGhosts.addEventListener('input', () => {
+  const v = parseInt(sliderGhosts.value, 10);
+  valGhosts.textContent = v;
+  sim.ghostCountInit = v;
+});
+
+sliderHumans.addEventListener('input', () => {
+  const v = parseInt(sliderHumans.value, 10);
+  valHumans.textContent = v;
+  sim.humanCountInit = v;
+});
+
+sliderSpeed.addEventListener('input', () => {
+  const v = parseInt(sliderSpeed.value, 10) / 10;
+  valSpeed.textContent = v.toFixed(1) + 'x';
+  sim.speedMultiplier = v;
+});
+
+// リサイズ
+window.addEventListener('resize', () => {
+  sim.resize();
+  if (sim.state === 'idle') {
+    sim.init();
+  }
+});
+
+// 初期描画
+sim.init();
+</script>
+</body>
+</html>
