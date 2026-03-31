@@ -93,7 +93,7 @@ ghost-hunt-sim/
 ### クラス構成
 
 | クラス | ファイル | 責務 |
-|--------|----------|------|
+| ------ | -------- | ---- |
 | `Ghost` | `src/entities/Ghost.ts` | おばけエンティティ。状態管理（hunting/digesting/releasing）、最寄りニンゲン追跡、捕食、消化タイマー、描画 |
 | `Human` | `src/entities/Human.ts` | ニンゲンエンティティ。逃走行動、ランダム移動、簡易Boids群れ行動、壁反射、描画 |
 | `Particle` | `src/entities/Particle.ts` | パーティクルエフェクト。霧/フラッシュ/星/ポップの4タイプ、ライフ管理 |
