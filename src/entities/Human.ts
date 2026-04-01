@@ -102,7 +102,7 @@ export class Human {
     const maxSt = this.effectiveMaxStamina()
     if (this.isFatigued) {
       // スタミナ切れ
-      this.stamina = Math.min(maxSt, this.stamina + STAMINA_RECOVERY_RATE * dt)
+      this.stamina = Math.min(maxSt, this.stamina + maxSt * STAMINA_RECOVERY_RATE * dt)
       if (this.stamina >= maxSt) {
         this.isFatigued = false
       }
@@ -214,7 +214,7 @@ export class Human {
     if (this.fleeing && !this.isFatigued) {
       this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN_RATE * dt)
     } else {
-      this.stamina = Math.min(maxSt, this.stamina + STAMINA_RECOVERY_RATE * dt)
+      this.stamina = Math.min(maxSt, this.stamina + maxSt * STAMINA_RECOVERY_RATE * dt)
     }
 
     // 疲労判定

@@ -29,8 +29,8 @@ export const HEALTH_DRAIN_RATE = 0.5
 export const MAX_STAMINA = 100
 /** 逃走・もがき時に消費するスタミナ量（フレーム単位） */
 export const STAMINA_DRAIN_RATE = 0.4
-/** 非逃走時に回復するスタミナ量（フレーム単位） */
-export const STAMINA_RECOVERY_RATE = 0.5
+/** 非逃走時に回復するスタミナ割合（最大スタミナに対するフレーム単位の割合） */
+export const STAMINA_RECOVERY_RATE = 0.005
 /** 疲労時に適用される速度倍率 */
 export const FATIGUE_SPEED_MULTIPLIER = 0.5
 
