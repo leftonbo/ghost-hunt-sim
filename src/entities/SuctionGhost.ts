@@ -9,6 +9,7 @@ import {
   ESCAPE_THRESHOLD,
   STUN_DURATION,
   SUCTION_SPEED_MULTIPLIER,
+  SUCTION_START_RANGE,
   SUCTION_RANGE,
   SUCTION_CONE_HALF_ANGLE,
   SUCTION_PULL_STRENGTH,
@@ -88,7 +89,7 @@ export class SuctionGhost extends Ghost {
 
       if (target) {
         const d = dist(this, target)
-        if (d < SUCTION_RANGE && this.suctionCooldown <= 0) {
+        if (d < SUCTION_START_RANGE && this.suctionCooldown <= 0) {
           // 吸い込み開始
           this.isSucking = true
           this.suctionTimer = SUCTION_DURATION

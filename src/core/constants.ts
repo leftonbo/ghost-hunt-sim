@@ -95,10 +95,11 @@ export const FERAL_DASH_RANGE = 180
 
 // すいこみおばけ
 export const SUCTION_SPEED_MULTIPLIER = 0.7
-export const SUCTION_RANGE = 150
+export const SUCTION_START_RANGE = 200
+export const SUCTION_RANGE = 300
 export const SUCTION_CONE_HALF_ANGLE = Math.PI / 4
-export const SUCTION_PULL_STRENGTH = 2.5
-export const SUCTION_DURATION = 60
+export const SUCTION_PULL_STRENGTH = 6
+export const SUCTION_DURATION = 90
 export const SUCTION_COOLDOWN = 120
 export const SUCTION_DRAIN_MULTIPLIER = 0.6
 
