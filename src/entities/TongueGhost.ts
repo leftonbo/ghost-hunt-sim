@@ -11,6 +11,7 @@ import {
   TONGUE_HOMING_STRENGTH,
   TONGUE_COOLDOWN,
   TONGUE_TIP_CAPTURE_DIST,
+  TONGUE_REEL_SPEED,
 } from '../core/constants'
 import { rand, dist, normalize } from '../core/utils'
 
@@ -51,6 +52,7 @@ export class TongueGhost extends Ghost {
   }
 
   override startFeeding(human: Human): void {
+    human.grabbed = false
     super.startFeeding(human)
     this.tongueGrabbedHuman = null
     this.tongueState = 'idle'
@@ -139,9 +141,10 @@ export class TongueGhost extends Ghost {
 
         // ニンゲンに当たったか判定
         for (const human of humans) {
-          if (human.captured) continue
+          if (human.captured || human.grabbed) continue
           if (dist({ x: this.tongueTipX, y: this.tongueTipY }, human) < TONGUE_TIP_CAPTURE_DIST) {
             this.tongueGrabbedHuman = human
+            human.grabbed = true
             this.tongueState = 'retracting'
             this.tongueTargetHuman = null
             break
@@ -157,6 +160,12 @@ export class TongueGhost extends Ghost {
         break
       }
       case 'retracting': {
+        // 掴んだニンゲンが他のおばけに捕食された場合はリセット
+        if (this.tongueGrabbedHuman && this.tongueGrabbedHuman.captured) {
+          this.tongueGrabbedHuman.grabbed = false
+          this.tongueGrabbedHuman = null
+        }
+
         // 舌を引っ込める
         const dx = this.x - this.tongueTipX
         const dy = this.y - this.tongueTipY
@@ -170,9 +179,18 @@ export class TongueGhost extends Ghost {
           // tongueGrabbedHuman がいれば canCapture() が true になり
           // Simulation の捕食判定で処理される
         } else {
-          const retractSpeed = TONGUE_EXTEND_SPEED * 1.5
+          // ニンゲンを掴んでいる場合は引き寄せ速度（遅め）
+          const retractSpeed = this.tongueGrabbedHuman
+            ? TONGUE_REEL_SPEED
+            : TONGUE_EXTEND_SPEED * 1.5
           this.tongueTipX += (dx / d) * retractSpeed * dt
           this.tongueTipY += (dy / d) * retractSpeed * dt
+
+          // 掴んだニンゲンを舌先に追従させる
+          if (this.tongueGrabbedHuman) {
+            this.tongueGrabbedHuman.x = this.tongueTipX
+            this.tongueGrabbedHuman.y = this.tongueTipY
+          }
         }
 
         // 移動は停止
@@ -188,6 +206,10 @@ export class TongueGhost extends Ghost {
   }
 
   override stunExternal(): void {
+    // 掴んだニンゲンを解放
+    if (this.tongueGrabbedHuman) {
+      this.tongueGrabbedHuman.grabbed = false
+    }
     // 舌をリセット
     this.tongueState = 'idle'
     this.tongueTargetHuman = null

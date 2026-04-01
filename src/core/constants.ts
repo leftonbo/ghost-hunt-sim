@@ -110,6 +110,7 @@ export const TONGUE_EXTEND_SPEED = 6
 export const TONGUE_HOMING_STRENGTH = 0.08
 export const TONGUE_COOLDOWN = 150
 export const TONGUE_TIP_CAPTURE_DIST = 15
+export const TONGUE_REEL_SPEED = TONGUE_EXTEND_SPEED * 0.7
 
 // おばけモード出現確率
 export const RANDOM_MODE_SPECIAL_CHANCE = 0.15

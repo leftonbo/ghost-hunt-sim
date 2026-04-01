@@ -37,6 +37,7 @@ export class Human {
   stamina: number
   isFatigued: boolean
   captured: boolean
+  grabbed: boolean
   escapeProgress: number
   lantern: Lantern | null
 
@@ -55,6 +56,7 @@ export class Human {
     this.stamina = MAX_STAMINA
     this.isFatigued = false
     this.captured = false
+    this.grabbed = false
     this.escapeProgress = 0
     this.lantern = null
   }
@@ -100,6 +102,9 @@ export class Human {
       this.updateCaptured(dt)
       return
     }
+
+    // 舌に掴まれている場合は移動をスキップ（座標はTongueGhostが制御）
+    if (this.grabbed) return
 
     const speedMultiplier = this.isFatigued ? FATIGUE_SPEED_MULTIPLIER : 1.0
     const speed = HUMAN_BASE_SPEED * speedMultiplier
