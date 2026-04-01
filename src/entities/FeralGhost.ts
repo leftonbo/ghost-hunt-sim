@@ -1,17 +1,19 @@
 import type { GhostType } from '../core/types'
 import type { Human } from './Human'
-import { Ghost } from './Ghost'
+import { Ghost, type GhostConfig } from './Ghost'
 import {
   GHOST_WOBBLE_AMPLITUDE,
   GHOST_WOBBLE_SPEED,
-  FERAL_NORMAL_SPEED,
-  FERAL_DASH_SPEED,
   FERAL_DASH_DURATION,
   FERAL_DASH_COOLDOWN,
   FERAL_DASH_RANGE,
   CAPTURE_DISTANCE,
 } from '../core/constants'
 import { rand, dist, normalize } from '../core/utils'
+
+/** フェラル固有の速度倍率 */
+const FERAL_NORMAL_MULTIPLIER = 0.7
+const FERAL_DASH_MULTIPLIER = 5
 
 /**
  * ダッシュ中のみ捕食できるフェラルおばけ。
@@ -29,9 +31,10 @@ export class FeralGhost extends Ghost {
    * フェラルおばけを生成する。
    * @param x 初期X座標
    * @param y 初期Y座標
+   * @param config 実行時設定
    */
-  constructor(x: number, y: number) {
-    super(x, y)
+  constructor(x: number, y: number, config?: GhostConfig) {
+    super(x, y, config)
     // フェラルは赤系の色
     this.color = `hsl(${rand(340, 370) % 360}, ${rand(60, 80)}%, ${rand(50, 65)}%)`
   }
@@ -70,7 +73,7 @@ export class FeralGhost extends Ghost {
             this.dashState = 'dashing'
             this.dashTimer = FERAL_DASH_DURATION
           } else {
-            this.moveTowardTarget(target, FERAL_NORMAL_SPEED, dt)
+            this.moveTowardTarget(target, this.baseSpeed * FERAL_NORMAL_MULTIPLIER, dt)
           }
         } else {
           this.vx *= 0.95
@@ -81,8 +84,9 @@ export class FeralGhost extends Ghost {
         break
       }
       case 'dashing': {
-        this.vx = this.dashDirX * FERAL_DASH_SPEED
-        this.vy = this.dashDirY * FERAL_DASH_SPEED
+        const dashSpeed = this.baseSpeed * FERAL_DASH_MULTIPLIER
+        this.vx = this.dashDirX * dashSpeed
+        this.vy = this.dashDirY * dashSpeed
         this.x += this.vx * dt
         this.y += this.vy * dt
 
@@ -99,7 +103,7 @@ export class FeralGhost extends Ghost {
       }
       case 'cooldown': {
         if (target) {
-          this.moveTowardTarget(target, FERAL_NORMAL_SPEED * 0.5, dt)
+          this.moveTowardTarget(target, this.baseSpeed * FERAL_NORMAL_MULTIPLIER * 0.5, dt)
         } else {
           this.vx *= 0.95
           this.vy *= 0.95

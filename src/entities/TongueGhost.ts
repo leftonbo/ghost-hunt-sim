@@ -1,8 +1,7 @@
 import type { GhostType } from '../core/types'
 import type { Human } from './Human'
-import { Ghost } from './Ghost'
+import { Ghost, type GhostConfig } from './Ghost'
 import {
-  GHOST_BASE_SPEED,
   GHOST_WOBBLE_AMPLITUDE,
   GHOST_WOBBLE_SPEED,
   TONGUE_SPEED_MULTIPLIER,
@@ -33,9 +32,10 @@ export class TongueGhost extends Ghost {
    * べろべろおばけを生成する。
    * @param x 初期X座標
    * @param y 初期Y座標
+   * @param config 実行時設定
    */
-  constructor(x: number, y: number) {
-    super(x, y)
+  constructor(x: number, y: number, config?: GhostConfig) {
+    super(x, y, config)
     // べろべろは緑系の色
     this.color = `hsl(${rand(100, 140)}, ${rand(50, 70)}%, ${rand(50, 65)}%)`
   }
@@ -84,7 +84,7 @@ export class TongueGhost extends Ghost {
    * @param ghosts 全おばけ配列
    */
   override updateHunting(humans: Human[], dt: number, ghosts: Ghost[]): void {
-    const speed = GHOST_BASE_SPEED * TONGUE_SPEED_MULTIPLIER
+    const speed = this.baseSpeed * TONGUE_SPEED_MULTIPLIER
 
     // 舌の状態更新
     switch (this.tongueState) {

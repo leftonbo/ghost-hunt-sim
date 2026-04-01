@@ -1,8 +1,7 @@
 import type { GhostType } from '../core/types'
 import type { Human } from './Human'
-import { Ghost } from './Ghost'
+import { Ghost, type GhostConfig } from './Ghost'
 import {
-  GHOST_BASE_SPEED,
   GHOST_WOBBLE_AMPLITUDE,
   GHOST_WOBBLE_SPEED,
   HEALTH_DRAIN_RATE,
@@ -35,9 +34,10 @@ export class SuctionGhost extends Ghost {
    * すいこみおばけを生成する。
    * @param x 初期X座標
    * @param y 初期Y座標
+   * @param config 実行時設定
    */
-  constructor(x: number, y: number) {
-    super(x, y)
+  constructor(x: number, y: number, config?: GhostConfig) {
+    super(x, y, config)
     // すいこみは紫系の色
     this.color = `hsl(${rand(270, 290)}, ${rand(50, 70)}%, ${rand(45, 60)}%)`
     this.baseRadius *= 1.15
@@ -101,7 +101,7 @@ export class SuctionGhost extends Ghost {
       }
     } else {
       // 通常時: ゆっくり移動
-      const speed = GHOST_BASE_SPEED * SUCTION_SPEED_MULTIPLIER
+      const speed = this.baseSpeed * SUCTION_SPEED_MULTIPLIER
       const target = this.findNearestHuman(humans)
 
       if (target) {

@@ -31,39 +31,89 @@
   <button id="btn-reset">🔄 リセット</button>
 
   <div class="slider-group">
-    <label>👻 おばけモード:</label>
-    <select id="select-ghost-mode">
-      <option value="random">ランダム</option>
-      <option value="hard">ハードモード</option>
-      <option value="normal">ノーマル固定</option>
-      <option value="feral">フェラル固定</option>
-      <option value="suction">すいこみ固定</option>
-      <option value="tongue">べろべろ固定</option>
-    </select>
-  </div>
-
-  <div class="slider-group">
-    <label>👻 初期おばけ:</label>
-    <input type="range" id="slider-ghosts" min="1" max="10" value="1">
-    <span class="slider-value" id="val-ghosts">1</span>
-  </div>
-
-  <div class="slider-group">
-    <label>🧑 初期ニンゲン:</label>
-    <input type="range" id="slider-humans" min="5" max="200" value="50">
-    <span class="slider-value" id="val-humans">50</span>
-  </div>
-
-  <div class="slider-group">
-    <label>🔦 ランタン:</label>
-    <input type="range" id="slider-lanterns" min="0" max="30" value="7">
-    <span class="slider-value" id="val-lanterns">7</span>
-  </div>
-
-  <div class="slider-group">
     <label>⚡ 速度:</label>
     <input type="range" id="slider-speed" min="5" max="30" value="10">
     <span class="slider-value" id="val-speed">1.0x</span>
+  </div>
+
+  <button id="btn-settings" title="詳細設定">☰</button>
+</div>
+
+<!-- 設定パネルオーバーレイ -->
+<div id="settings-overlay"></div>
+
+<!-- 設定パネル -->
+<div id="settings-panel">
+  <div class="settings-header">
+    <span>⚙️ 詳細設定</span>
+    <button id="btn-close-settings">✕</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="section-title">👻 おばけ設定</div>
+    <div class="slider-group">
+      <label>モード:</label>
+      <select id="select-ghost-mode">
+        <option value="random">ランダム</option>
+        <option value="hard">ハードモード</option>
+        <option value="normal">ノーマル固定</option>
+        <option value="feral">フェラル固定</option>
+        <option value="suction">すいこみ固定</option>
+        <option value="tongue">べろべろ固定</option>
+      </select>
+    </div>
+    <div class="slider-group">
+      <label>初期おばけ:</label>
+      <input type="range" id="slider-ghosts" min="1" max="10" value="1">
+      <span class="slider-value" id="val-ghosts">1</span>
+    </div>
+    <div class="slider-group">
+      <label>移動速度:</label>
+      <input type="range" id="slider-ghost-speed" min="5" max="50" value="20" step="1">
+      <span class="slider-value" id="val-ghost-speed">2.0</span>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="section-title">🧑 ニンゲン設定</div>
+    <div class="slider-group">
+      <label>初期ニンゲン:</label>
+      <input type="range" id="slider-humans" min="5" max="200" value="50">
+      <span class="slider-value" id="val-humans">50</span>
+    </div>
+    <div class="slider-group">
+      <label>移動速度:</label>
+      <input type="range" id="slider-human-speed" min="5" max="50" value="25" step="1">
+      <span class="slider-value" id="val-human-speed">2.5</span>
+    </div>
+    <div class="slider-group">
+      <label>生気最大値:</label>
+      <input type="range" id="slider-max-health" min="10" max="500" value="100" step="10">
+      <span class="slider-value" id="val-max-health">100</span>
+    </div>
+    <div class="slider-group">
+      <label>スタミナ最大値:</label>
+      <input type="range" id="slider-max-stamina" min="10" max="500" value="100" step="10">
+      <span class="slider-value" id="val-max-stamina">100</span>
+    </div>
+    <div class="slider-group">
+      <label>もがき力:</label>
+      <input type="range" id="slider-escape-rate" min="1" max="30" value="8" step="1">
+      <span class="slider-value" id="val-escape-rate">0.8</span>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="section-title">🔦 アイテム設定</div>
+    <div class="slider-group">
+      <label>ランタン:</label>
+      <input type="range" id="slider-lanterns" min="0" max="30" value="7">
+      <span class="slider-value" id="val-lanterns">7</span>
+    </div>
+  </div>
+
+  <div class="settings-footer">
+    <button id="btn-defaults">🔄 デフォルトに戻す</button>
   </div>
 </div>
 

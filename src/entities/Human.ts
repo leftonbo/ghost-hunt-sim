@@ -22,6 +22,14 @@ import {
 } from '../core/constants'
 import { rand, dist, normalize, pickHumanColor } from '../core/utils'
 
+/** ニンゲンの実行時設定 */
+export interface HumanConfig {
+  humanBaseSpeed: number
+  maxHealth: number
+  maxStamina: number
+  escapeProgressRate: number
+}
+
 /**
  * 逃走・疲労・もがき・ランタン所持を管理するニンゲンクラス。
  */
@@ -43,13 +51,18 @@ export class Human {
   grabbed: boolean
   escapeProgress: number
   lantern: Lantern | null
+  cfgBaseSpeed: number
+  cfgMaxHealth: number
+  cfgMaxStamina: number
+  cfgEscapeProgressRate: number
 
   /**
    * ニンゲンを生成する。
    * @param x 初期X座標
    * @param y 初期Y座標
+   * @param config 実行時設定
    */
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, config?: HumanConfig) {
     this.x = x
     this.y = y
     this.vx = rand(-0.5, 0.5)
@@ -60,8 +73,12 @@ export class Human {
     this.legPhase = rand(0, Math.PI * 2)
     this.fleeing = false
     this.fleeTimer = 0
-    this.health = MAX_HEALTH
-    this.stamina = MAX_STAMINA
+    this.cfgBaseSpeed = config?.humanBaseSpeed ?? HUMAN_BASE_SPEED
+    this.cfgMaxHealth = config?.maxHealth ?? MAX_HEALTH
+    this.cfgMaxStamina = config?.maxStamina ?? MAX_STAMINA
+    this.cfgEscapeProgressRate = config?.escapeProgressRate ?? ESCAPE_PROGRESS_RATE
+    this.health = this.cfgMaxHealth
+    this.stamina = this.cfgMaxStamina
     this.isFatigued = false
     this.captured = false
     this.grabbed = false
@@ -73,7 +90,7 @@ export class Human {
    * 現在の生気に応じた実効スタミナ上限を返す。
    */
   effectiveMaxStamina(): number {
-    return MAX_STAMINA * (this.health / MAX_HEALTH)
+    return this.cfgMaxStamina * (this.health / this.cfgMaxHealth)
   }
 
   /**
@@ -109,7 +126,7 @@ export class Human {
     } else if (!this.isFatigued) {
       // スタミナがある間はもがいて脱出進捗を蓄積
       this.stamina = Math.max(0, this.stamina - STRUGGLE_STAMINA_COST * dt)
-      this.escapeProgress += ESCAPE_PROGRESS_RATE * dt
+      this.escapeProgress += this.cfgEscapeProgressRate * dt
 
       // 疲労判定
       if (this.stamina <= 0) {
@@ -137,7 +154,7 @@ export class Human {
     if (this.grabbed) return
 
     const speedMultiplier = this.isFatigued ? FATIGUE_SPEED_MULTIPLIER : 1.0
-    const speed = HUMAN_BASE_SPEED * speedMultiplier
+    const speed = this.cfgBaseSpeed * speedMultiplier
 
     // おばけ検知
     let fleeVx = 0

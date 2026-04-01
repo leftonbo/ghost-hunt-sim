@@ -15,6 +15,11 @@ import {
 } from '../core/constants'
 import { rand, dist, normalize, pickGhostColor } from '../core/utils'
 
+/** おばけの実行時設定 */
+export interface GhostConfig {
+  ghostBaseSpeed: number
+}
+
 /**
  * すべてのおばけ種別の基底となるクラス。
  */
@@ -37,13 +42,15 @@ export class Ghost {
   opacity: number
   spawnScale: number
   mistTimer: number
+  baseSpeed: number
 
   /**
    * おばけを生成する。
    * @param x 初期X座標
    * @param y 初期Y座標
+   * @param config 実行時設定
    */
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, config?: GhostConfig) {
     this.x = x
     this.y = y
     this.vx = 0
@@ -62,6 +69,7 @@ export class Ghost {
     this.opacity = rand(0.55, 0.8)
     this.spawnScale = 0
     this.mistTimer = 0
+    this.baseSpeed = config?.ghostBaseSpeed ?? GHOST_BASE_SPEED
   }
 
   /**
@@ -121,7 +129,7 @@ export class Ghost {
       const dx = target.x - this.x
       const dy = target.y - this.y
       const n = normalize(dx, dy)
-      const speed = GHOST_BASE_SPEED
+      const speed = this.baseSpeed
       const wobble =
         Math.sin(this.wobbleTime * GHOST_WOBBLE_SPEED + this.wobbleOffset) * GHOST_WOBBLE_AMPLITUDE
       const perpX = -n.y

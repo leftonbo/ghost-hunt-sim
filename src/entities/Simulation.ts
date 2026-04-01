@@ -3,6 +3,11 @@ import {
   DEFAULT_GHOST_COUNT,
   DEFAULT_HUMAN_COUNT,
   DEFAULT_LANTERN_COUNT,
+  GHOST_BASE_SPEED,
+  HUMAN_BASE_SPEED,
+  MAX_HEALTH,
+  MAX_STAMINA,
+  ESCAPE_PROGRESS_RATE,
   LANTERN_PICKUP_DISTANCE,
   LANTERN_ACTIVATION_DISTANCE,
   LANTERN_STUN_RADIUS,
@@ -37,6 +42,11 @@ export class Simulation {
   humanCountInit: number
   lanternCountInit: number
   ghostMode: GhostMode
+  ghostBaseSpeed: number
+  humanBaseSpeed: number
+  maxHealth: number
+  maxStamina: number
+  escapeProgressRate: number
   width: number
   height: number
   ui: UIElements
@@ -64,6 +74,11 @@ export class Simulation {
     this.humanCountInit = DEFAULT_HUMAN_COUNT
     this.lanternCountInit = DEFAULT_LANTERN_COUNT
     this.ghostMode = 'random'
+    this.ghostBaseSpeed = GHOST_BASE_SPEED
+    this.humanBaseSpeed = HUMAN_BASE_SPEED
+    this.maxHealth = MAX_HEALTH
+    this.maxStamina = MAX_STAMINA
+    this.escapeProgressRate = ESCAPE_PROGRESS_RATE
 
     this.width = 0
     this.height = 0
@@ -110,14 +125,26 @@ export class Simulation {
         rand(margin, this.width - margin),
         rand(margin, this.height - margin),
         pickGhostType(this.ghostMode),
+        { ghostBaseSpeed: this.ghostBaseSpeed },
       )
       g.spawnScale = 1 // 初期配置は即表示
       this.ghosts.push(g)
     }
 
+    const humanConfig = {
+      humanBaseSpeed: this.humanBaseSpeed,
+      maxHealth: this.maxHealth,
+      maxStamina: this.maxStamina,
+      escapeProgressRate: this.escapeProgressRate,
+    }
+
     for (let i = 0; i < this.humanCountInit; i++) {
       this.humans.push(
-        new Human(rand(margin, this.width - margin), rand(margin, this.height - margin)),
+        new Human(
+          rand(margin, this.width - margin),
+          rand(margin, this.height - margin),
+          humanConfig,
+        ),
       )
     }
 
@@ -214,8 +241,9 @@ export class Simulation {
    * @param time 現在時刻（ms）
    */
   update(dt: number, time: number): void {
-    // ゴースト更新
+    // ゴースト更新（リアルタイム設定反映）
     for (const ghost of this.ghosts) {
+      ghost.baseSpeed = this.ghostBaseSpeed
       ghost.update(this.humans, dt, time, this.width, this.height, this.ghosts)
     }
 
@@ -308,6 +336,7 @@ export class Simulation {
           ghost.x + Math.cos(angle) * spawnDist,
           ghost.y + Math.sin(angle) * spawnDist,
           pickGhostType(this.ghostMode),
+          { ghostBaseSpeed: this.ghostBaseSpeed },
         )
         newGhost.spawnScale = 0
         newGhost.vx = Math.cos(angle) * 3
@@ -344,8 +373,12 @@ export class Simulation {
       ghost.escapedHumans = []
     }
 
-    // ニンゲン更新
+    // ニンゲン更新（リアルタイム設定反映）
     for (const human of this.humans) {
+      human.cfgBaseSpeed = this.humanBaseSpeed
+      human.cfgMaxHealth = this.maxHealth
+      human.cfgMaxStamina = this.maxStamina
+      human.cfgEscapeProgressRate = this.escapeProgressRate
       human.update(this.ghosts, this.humans, dt, this.width, this.height)
     }
 

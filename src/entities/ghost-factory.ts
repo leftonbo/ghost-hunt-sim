@@ -1,7 +1,7 @@
 import type { GhostType, GhostMode } from '../core/types'
 import { RANDOM_MODE_SPECIAL_CHANCE, HARD_MODE_SPECIAL_CHANCE } from '../core/constants'
 import { randInt } from '../core/utils'
-import { Ghost } from './Ghost'
+import { Ghost, type GhostConfig } from './Ghost'
 import { FeralGhost } from './FeralGhost'
 import { SuctionGhost } from './SuctionGhost'
 import { TongueGhost } from './TongueGhost'
@@ -14,18 +14,19 @@ const SPECIAL_TYPES: GhostType[] = ['feral', 'suction', 'tongue']
  * @param x おばけの初期X座標
  * @param y おばけの初期Y座標
  * @param type おばけの種類
+ * @param config 実行時設定
  * @returns 生成されたおばけインスタンス
  */
-export function createGhost(x: number, y: number, type: GhostType): Ghost {
+export function createGhost(x: number, y: number, type: GhostType, config?: GhostConfig): Ghost {
   switch (type) {
     case 'feral':
-      return new FeralGhost(x, y)
+      return new FeralGhost(x, y, config)
     case 'suction':
-      return new SuctionGhost(x, y)
+      return new SuctionGhost(x, y, config)
     case 'tongue':
-      return new TongueGhost(x, y)
+      return new TongueGhost(x, y, config)
     default:
-      return new Ghost(x, y)
+      return new Ghost(x, y, config)
   }
 }
 
