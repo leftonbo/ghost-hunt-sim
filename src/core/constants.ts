@@ -155,7 +155,7 @@ export const SUCTION_PULL_STRENGTH = 6
 export const SUCTION_DURATION = 90
 /** すいこみの再使用クールダウン */
 export const SUCTION_COOLDOWN = 120
-/** すいこみ中の生気吸収倍率 */
+/** すいこみおばけの生気吸収倍率 */
 export const SUCTION_DRAIN_MULTIPLIER = 0.6
 
 // べろべろおばけ
