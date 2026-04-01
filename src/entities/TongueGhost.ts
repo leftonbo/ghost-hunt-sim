@@ -36,10 +36,6 @@ export class TongueGhost extends Ghost {
     return this.tongueGrabbedHuman !== null && this.state === 'hunting'
   }
 
-  override checkCapture(human: Human): boolean {
-    return this.tongueGrabbedHuman === human
-  }
-
   // ランタンの光が舌にも当たる
   override isInRange(sourceX: number, sourceY: number, radius: number): boolean {
     if (super.isInRange(sourceX, sourceY, radius)) return true
