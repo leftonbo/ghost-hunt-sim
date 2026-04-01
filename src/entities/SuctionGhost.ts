@@ -5,7 +5,7 @@ import {
   GHOST_BASE_SPEED,
   GHOST_WOBBLE_AMPLITUDE,
   GHOST_WOBBLE_SPEED,
-  LIFE_FORCE_DRAIN_RATE,
+  HEALTH_DRAIN_RATE,
   ESCAPE_THRESHOLD,
   STUN_DURATION,
   SUCTION_SPEED_MULTIPLIER,
@@ -165,7 +165,7 @@ export class SuctionGhost extends Ghost {
    */
   override updateDigesting(dt: number): void {
     if (this.capturedHuman) {
-      this.capturedHuman.health -= LIFE_FORCE_DRAIN_RATE * SUCTION_DRAIN_MULTIPLIER * dt
+      this.capturedHuman.health -= HEALTH_DRAIN_RATE * SUCTION_DRAIN_MULTIPLIER * dt
       this.capturedHuman.updateCaptured(dt)
 
       if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {

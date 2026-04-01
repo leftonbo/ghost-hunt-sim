@@ -20,9 +20,9 @@ export const CAPTURE_DISTANCE = 18
 
 // 生気パラメータ
 /** ニンゲンの最大生気 */
-export const MAX_LIFE_FORCE = 100
+export const MAX_HEALTH = 100
 /** 捕食中に生気が減少するフレームあたりの量 */
-export const LIFE_FORCE_DRAIN_RATE = 0.5
+export const HEALTH_DRAIN_RATE = 0.5
 
 // スタミナパラメータ
 /** ニンゲンの最大スタミナ */

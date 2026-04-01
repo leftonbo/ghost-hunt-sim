@@ -12,7 +12,7 @@ import {
   WALL_MARGIN,
   WALL_AVOIDANCE_RADIUS,
   WALL_AVOIDANCE_STRENGTH,
-  MAX_LIFE_FORCE,
+  MAX_HEALTH,
   MAX_STAMINA,
   STAMINA_DRAIN_RATE,
   STAMINA_RECOVERY_RATE,
@@ -60,7 +60,7 @@ export class Human {
     this.legPhase = rand(0, Math.PI * 2)
     this.fleeing = false
     this.fleeTimer = 0
-    this.health = MAX_LIFE_FORCE
+    this.health = MAX_HEALTH
     this.stamina = MAX_STAMINA
     this.isFatigued = false
     this.captured = false
@@ -73,7 +73,7 @@ export class Human {
    * 現在の生気に応じた実効スタミナ上限を返す。
    */
   effectiveMaxStamina(): number {
-    return MAX_STAMINA * (this.health / MAX_LIFE_FORCE)
+    return MAX_STAMINA * (this.health / MAX_HEALTH)
   }
 
   /**
@@ -370,7 +370,7 @@ export class Human {
 
     ctx.save()
     // 生気低下で薄くなる + 疲労で更に薄くなる
-    const lifeAlpha = 0.5 + 0.5 * (this.health / MAX_LIFE_FORCE)
+    const lifeAlpha = 0.5 + 0.5 * (this.health / MAX_HEALTH)
     const fatigueAlpha = this.isFatigued ? 0.6 : 1.0
     ctx.globalAlpha = 0.9 * lifeAlpha * fatigueAlpha
 

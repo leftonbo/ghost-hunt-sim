@@ -8,7 +8,7 @@ import {
   GHOST_SEPARATION_RADIUS,
   GHOST_SEPARATION_STRENGTH,
   CAPTURE_DISTANCE,
-  LIFE_FORCE_DRAIN_RATE,
+  HEALTH_DRAIN_RATE,
   ESCAPE_THRESHOLD,
   STUN_DURATION,
   WALL_MARGIN,
@@ -143,7 +143,7 @@ export class Ghost {
    */
   updateDigesting(dt: number): void {
     if (this.capturedHuman) {
-      this.capturedHuman.health -= LIFE_FORCE_DRAIN_RATE * dt
+      this.capturedHuman.health -= HEALTH_DRAIN_RATE * dt
       this.capturedHuman.updateCaptured(dt)
 
       if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {
