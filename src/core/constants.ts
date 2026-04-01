@@ -89,9 +89,9 @@ export const LANTERN_RADIUS = 8
 // フェラルおばけ
 export const FERAL_NORMAL_SPEED = GHOST_BASE_SPEED * 0.7
 export const FERAL_DASH_SPEED = GHOST_BASE_SPEED * 5
-export const FERAL_DASH_DURATION = 12
+export const FERAL_DASH_DURATION = 30
 export const FERAL_DASH_COOLDOWN = 180
-export const FERAL_DASH_RANGE = 180
+export const FERAL_DASH_RANGE = 360
 
 // すいこみおばけ
 export const SUCTION_SPEED_MULTIPLIER = 0.7
