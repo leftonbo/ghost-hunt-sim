@@ -4,7 +4,7 @@
 
 // エンティティ数
 export const DEFAULT_GHOST_COUNT = 1
-export const DEFAULT_HUMAN_COUNT = 30
+export const DEFAULT_HUMAN_COUNT = 50
 
 // 速度
 export const HUMAN_BASE_SPEED = 2.5
@@ -78,7 +78,7 @@ export const WALL_AVOIDANCE_RADIUS = 60
 export const WALL_AVOIDANCE_STRENGTH = 1.5
 
 // ランタンパラメータ
-export const DEFAULT_LANTERN_COUNT = 5
+export const DEFAULT_LANTERN_COUNT = 7
 export const LANTERN_PICKUP_DISTANCE = 25
 export const LANTERN_ACTIVATION_DISTANCE = 80
 export const LANTERN_STUN_RADIUS = 120
