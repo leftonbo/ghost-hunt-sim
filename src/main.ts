@@ -41,40 +41,30 @@ const sim = new Simulation(canvas, ui)
 // ============================================================
 // ボタン
 // ============================================================
-const btnStart = getElement<HTMLButtonElement>('btn-start')
-const btnPause = getElement<HTMLButtonElement>('btn-pause')
+const btnPlay = getElement<HTMLButtonElement>('btn-play')
 const btnReset = getElement<HTMLButtonElement>('btn-reset')
 
-btnStart.addEventListener('click', () => {
+btnPlay.addEventListener('click', () => {
   if (sim.state === 'idle') {
     sim.init()
     sim.start()
-    btnStart.disabled = true
-    btnPause.disabled = false
+    btnPlay.textContent = '⏸ 一時停止'
+  } else if (sim.state === 'running') {
+    sim.pause()
+    btnPlay.textContent = '▶ 再開'
+  } else if (sim.state === 'paused') {
+    sim.pause()
+    btnPlay.textContent = '⏸ 一時停止'
   } else if (sim.state === 'finished') {
-    // 終了後に開始ボタンを押したらリセット＆開始
     sim.reset()
     sim.start()
-    btnStart.disabled = true
-    btnPause.disabled = false
-  }
-})
-
-btnPause.addEventListener('click', () => {
-  if (sim.state === 'running') {
-    sim.pause()
-    btnPause.textContent = '▶ 再開'
-  } else if (sim.state === 'paused') {
-    sim.pause() // toggles back to running
-    btnPause.textContent = '⏸ 一時停止'
+    btnPlay.textContent = '⏸ 一時停止'
   }
 })
 
 btnReset.addEventListener('click', () => {
   sim.reset()
-  btnStart.disabled = false
-  btnPause.disabled = true
-  btnPause.textContent = '⏸ 一時停止'
+  btnPlay.textContent = '▶ 開始'
 })
 
 // ============================================================
