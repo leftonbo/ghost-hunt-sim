@@ -11,10 +11,8 @@ export const DEFAULT_HUMAN_COUNT = 50
 // 速度
 /** ニンゲンの基準移動速度 */
 export const HUMAN_BASE_SPEED = 2.5
-/** おばけ速度をニンゲン速度に対して決める比率 */
-export const GHOST_SPEED_RATIO = 0.8
 /** おばけの基準移動速度 */
-export const GHOST_BASE_SPEED = HUMAN_BASE_SPEED * GHOST_SPEED_RATIO
+export const GHOST_BASE_SPEED = 2.0
 
 // 捕食パラメータ
 /** おばけがニンゲンを捕食判定できる距離 */
