@@ -33,7 +33,7 @@ export class Human {
   legPhase: number
   fleeing: boolean
   fleeTimer: number
-  lifeForce: number
+  health: number
   stamina: number
   isFatigued: boolean
   captured: boolean
@@ -52,7 +52,7 @@ export class Human {
     this.legPhase = rand(0, Math.PI * 2)
     this.fleeing = false
     this.fleeTimer = 0
-    this.lifeForce = MAX_LIFE_FORCE
+    this.health = MAX_LIFE_FORCE
     this.stamina = MAX_STAMINA
     this.isFatigued = false
     this.captured = false
@@ -62,7 +62,7 @@ export class Human {
   }
 
   effectiveMaxStamina(): number {
-    return MAX_STAMINA * (this.lifeForce / MAX_LIFE_FORCE)
+    return MAX_STAMINA * (this.health / MAX_LIFE_FORCE)
   }
 
   pickUpLantern(lantern: Lantern): void {
@@ -313,7 +313,7 @@ export class Human {
 
     ctx.save()
     // 生気低下で薄くなる + 疲労で更に薄くなる
-    const lifeAlpha = 0.5 + 0.5 * (this.lifeForce / MAX_LIFE_FORCE)
+    const lifeAlpha = 0.5 + 0.5 * (this.health / MAX_LIFE_FORCE)
     const fatigueAlpha = this.isFatigued ? 0.6 : 1.0
     ctx.globalAlpha = 0.9 * lifeAlpha * fatigueAlpha
 

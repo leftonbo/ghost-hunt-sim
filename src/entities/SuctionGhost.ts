@@ -140,7 +140,7 @@ export class SuctionGhost extends Ghost {
 
   override updateDigesting(dt: number): void {
     if (this.capturedHuman) {
-      this.capturedHuman.lifeForce -= LIFE_FORCE_DRAIN_RATE * SUCTION_DRAIN_MULTIPLIER * dt
+      this.capturedHuman.health -= LIFE_FORCE_DRAIN_RATE * SUCTION_DRAIN_MULTIPLIER * dt
       this.capturedHuman.updateCaptured(dt)
 
       if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {
@@ -148,8 +148,8 @@ export class SuctionGhost extends Ghost {
         return
       }
 
-      if (this.capturedHuman.lifeForce <= 0) {
-        this.capturedHuman.lifeForce = 0
+      if (this.capturedHuman.health <= 0) {
+        this.capturedHuman.health = 0
         this.state = 'releasing'
       }
     }

@@ -116,7 +116,7 @@ export class Ghost {
 
   updateDigesting(dt: number): void {
     if (this.capturedHuman) {
-      this.capturedHuman.lifeForce -= LIFE_FORCE_DRAIN_RATE * dt
+      this.capturedHuman.health -= LIFE_FORCE_DRAIN_RATE * dt
       this.capturedHuman.updateCaptured(dt)
 
       if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {
@@ -124,8 +124,8 @@ export class Ghost {
         return
       }
 
-      if (this.capturedHuman.lifeForce <= 0) {
-        this.capturedHuman.lifeForce = 0
+      if (this.capturedHuman.health <= 0) {
+        this.capturedHuman.health = 0
         this.state = 'releasing'
       }
     }
@@ -312,7 +312,7 @@ export class Ghost {
   drawDigestingSilhouette(ctx: CanvasRenderingContext2D, r: number, time: number): void {
     if (this.state !== 'digesting' || !this.capturedHuman) return
     const human = this.capturedHuman
-    const lifeRatio = human.lifeForce / 100
+    const lifeRatio = human.health / 100
     const silAlpha = 0.3 * lifeRatio
     const struggleShake = human.stamina > 0 ? Math.sin(time * 0.02) * r * 0.15 : 0
     ctx.globalAlpha = silAlpha
