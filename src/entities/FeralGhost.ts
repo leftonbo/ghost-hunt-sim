@@ -13,6 +13,9 @@ import {
 } from '../core/constants'
 import { rand, dist, normalize } from '../core/utils'
 
+/**
+ * ダッシュ中のみ捕食できるフェラルおばけ。
+ */
 export class FeralGhost extends Ghost {
   override ghostType: GhostType = 'feral'
   dashState: 'ready' | 'dashing' | 'cooldown' = 'ready'
@@ -22,16 +25,30 @@ export class FeralGhost extends Ghost {
   dashDirY: number = 0
   dashTrail: { x: number; y: number; alpha: number }[] = []
 
+  /**
+   * フェラルおばけを生成する。
+   * @param x 初期X座標
+   * @param y 初期Y座標
+   */
   constructor(x: number, y: number) {
     super(x, y)
     // フェラルは赤系の色
     this.color = `hsl(${rand(340, 370) % 360}, ${rand(60, 80)}%, ${rand(50, 65)}%)`
   }
 
+  /**
+   * 現在フレームで捕食可能かを返す。
+   */
   override canCapture(): boolean {
     return this.state === 'hunting' && this.dashState === 'dashing'
   }
 
+  /**
+   * 狩猟状態の更新を行う。
+   * @param humans 現在生存しているニンゲン配列
+   * @param dt 経過フレーム時間
+   * @param ghosts 全おばけ配列
+   */
   override updateHunting(humans: Human[], dt: number, ghosts: Ghost[]): void {
     // ダッシュトレイル更新
     this.dashTrail = this.dashTrail.filter((t) => {
@@ -100,6 +117,10 @@ export class FeralGhost extends Ghost {
     this.applySeparation(ghosts, dt)
   }
 
+  /**
+   * スタン状態の更新を行う。
+   * @param dt 経過フレーム時間
+   */
   override updateStunned(dt: number): void {
     super.updateStunned(dt)
     if (this.state === 'hunting') {
@@ -123,6 +144,11 @@ export class FeralGhost extends Ghost {
     this.y += this.vy * dt
   }
 
+  /**
+   * フェラルおばけ本体を描画する。
+   * @param ctx 描画コンテキスト
+   * @param time 現在時刻（ms）
+   */
   override draw(ctx: CanvasRenderingContext2D, time: number): void {
     // ダッシュトレイル描画（ワールド座標）
     for (const t of this.dashTrail) {

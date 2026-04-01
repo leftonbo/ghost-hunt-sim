@@ -22,6 +22,9 @@ import {
 } from '../core/constants'
 import { rand, dist, normalize, pickHumanColor } from '../core/utils'
 
+/**
+ * 逃走・疲労・もがき・ランタン所持を管理するニンゲンクラス。
+ */
 export class Human {
   x: number
   y: number
@@ -41,6 +44,11 @@ export class Human {
   escapeProgress: number
   lantern: Lantern | null
 
+  /**
+   * ニンゲンを生成する。
+   * @param x 初期X座標
+   * @param y 初期Y座標
+   */
   constructor(x: number, y: number) {
     this.x = x
     this.y = y
@@ -61,20 +69,34 @@ export class Human {
     this.lantern = null
   }
 
+  /**
+   * 現在の生気に応じた実効スタミナ上限を返す。
+   */
   effectiveMaxStamina(): number {
     return MAX_STAMINA * (this.health / MAX_LIFE_FORCE)
   }
 
+  /**
+   * ランタンを拾って所持状態にする。
+   * @param lantern 拾得するランタン
+   */
   pickUpLantern(lantern: Lantern): void {
     this.lantern = lantern
   }
 
+  /**
+   * 所持ランタンを手放して返す。
+   */
   dropLantern(): Lantern | null {
     const lantern = this.lantern
     this.lantern = null
     return lantern
   }
 
+  /**
+   * 捕食中のもがき・スタミナ・疲労状態を更新する。
+   * @param dt 経過フレーム時間
+   */
   updateCaptured(dt: number): void {
     // スタミナ管理
     const maxSt = this.effectiveMaxStamina()
@@ -96,6 +118,14 @@ export class Human {
     }
   }
 
+  /**
+   * ニンゲンの行動状態を更新する。
+   * @param ghosts 全おばけ配列
+   * @param humans 全ニンゲン配列
+   * @param dt 経過フレーム時間
+   * @param canvasW キャンバス幅
+   * @param canvasH キャンバス高さ
+   */
   update(ghosts: Ghost[], humans: Human[], dt: number, canvasW: number, canvasH: number): void {
     // 捕食されている場合は通常の移動をスキップ
     if (this.captured) {
@@ -203,6 +233,12 @@ export class Human {
     this.bounceOffWalls(canvasW, canvasH)
   }
 
+  /**
+   * 近接した他ニンゲンとの分離ベクトルを速度に反映する。
+   * @param humans 全ニンゲン配列
+   * @param dt 経過フレーム時間
+   * @param strength 分離力の強さ
+   */
   applySeparation(humans: Human[], dt: number, strength: number): void {
     let sepX = 0,
       sepY = 0
@@ -220,6 +256,11 @@ export class Human {
     this.vy += sepY * strength * dt
   }
 
+  /**
+   * 群れ行動（Cohesion / Separation）を適用する。
+   * @param humans 全ニンゲン配列
+   * @param dt 経過フレーム時間
+   */
   applyFlocking(humans: Human[], dt: number): void {
     let cohX = 0,
       cohY = 0,
@@ -247,6 +288,13 @@ export class Human {
     this.applySeparation(humans, dt, FLOCK_SEPARATION)
   }
 
+  /**
+   * 壁に近づいた際の回避ステアリングを適用する。
+   * @param w キャンバス幅
+   * @param h キャンバス高さ
+   * @param speed 現在の基準速度
+   * @param dt 経過フレーム時間
+   */
   applyWallAvoidance(w: number, h: number, speed: number, dt: number): void {
     const m = WALL_MARGIN + HUMAN_RADIUS
     let avoidVx = 0
@@ -278,6 +326,11 @@ export class Human {
     this.vy += avoidVy * WALL_AVOIDANCE_STRENGTH * speed * dt
   }
 
+  /**
+   * 壁衝突時の反射と徘徊角度の再設定を行う。
+   * @param w キャンバス幅
+   * @param h キャンバス高さ
+   */
   bounceOffWalls(w: number, h: number): void {
     const m = WALL_MARGIN + HUMAN_RADIUS
     if (this.x < m) {
@@ -302,6 +355,10 @@ export class Human {
     }
   }
 
+  /**
+   * ニンゲン本体を描画する。
+   * @param ctx 描画コンテキスト
+   */
   draw(ctx: CanvasRenderingContext2D): void {
     // 捕食中は描画しない（おばけ側のシルエットとして描画される）
     if (this.captured) return

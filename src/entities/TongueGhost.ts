@@ -15,6 +15,9 @@ import {
 } from '../core/constants'
 import { rand, dist, normalize } from '../core/utils'
 
+/**
+ * 舌を伸ばして遠距離のニンゲンを捕らえるおばけ。
+ */
 export class TongueGhost extends Ghost {
   override ghostType: GhostType = 'tongue'
   tongueState: 'idle' | 'extending' | 'retracting' = 'idle'
@@ -26,17 +29,31 @@ export class TongueGhost extends Ghost {
   tongueGrabbedHuman: Human | null = null
   tongueCooldown: number = 0
 
+  /**
+   * べろべろおばけを生成する。
+   * @param x 初期X座標
+   * @param y 初期Y座標
+   */
   constructor(x: number, y: number) {
     super(x, y)
     // べろべろは緑系の色
     this.color = `hsl(${rand(100, 140)}, ${rand(50, 70)}%, ${rand(50, 65)}%)`
   }
 
+  /**
+   * 現在フレームで捕食可能かを返す。
+   */
   override canCapture(): boolean {
     return this.tongueGrabbedHuman !== null && this.state === 'hunting'
   }
 
   // ランタンの光が舌にも当たる
+  /**
+   * 本体または舌先が指定範囲内にあるか判定する。
+   * @param sourceX 判定中心X座標
+   * @param sourceY 判定中心Y座標
+   * @param radius 判定半径
+   */
   override isInRange(sourceX: number, sourceY: number, radius: number): boolean {
     if (super.isInRange(sourceX, sourceY, radius)) return true
     if (this.tongueState !== 'idle') {
@@ -47,6 +64,10 @@ export class TongueGhost extends Ghost {
     return false
   }
 
+  /**
+   * 舌で引き寄せたニンゲンの捕食開始処理を行う。
+   * @param human 捕食対象のニンゲン
+   */
   override startFeeding(human: Human): void {
     human.grabbed = false
     super.startFeeding(human)
@@ -56,6 +77,12 @@ export class TongueGhost extends Ghost {
     this.tongueCooldown = TONGUE_COOLDOWN
   }
 
+  /**
+   * 狩猟状態と舌の状態遷移を更新する。
+   * @param humans 現在生存しているニンゲン配列
+   * @param dt 経過フレーム時間
+   * @param ghosts 全おばけ配列
+   */
   override updateHunting(humans: Human[], dt: number, ghosts: Ghost[]): void {
     const speed = GHOST_BASE_SPEED * TONGUE_SPEED_MULTIPLIER
 
@@ -201,6 +228,9 @@ export class TongueGhost extends Ghost {
     this.applySeparation(ghosts, dt)
   }
 
+  /**
+   * 外部スタン時に舌状態を初期化して基底処理を呼ぶ。
+   */
   override stunExternal(): void {
     // 掴んだニンゲンを解放
     if (this.tongueGrabbedHuman) {
@@ -214,6 +244,11 @@ export class TongueGhost extends Ghost {
     super.stunExternal()
   }
 
+  /**
+   * べろべろおばけ本体と舌を描画する。
+   * @param ctx 描画コンテキスト
+   * @param time 現在時刻（ms）
+   */
   override draw(ctx: CanvasRenderingContext2D, time: number): void {
     const scale = this.spawnScale
     if (scale <= 0) return

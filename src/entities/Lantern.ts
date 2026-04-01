@@ -1,12 +1,20 @@
 import { LANTERN_COOLDOWN, LANTERN_RADIUS } from '../core/constants'
 import { rand } from '../core/utils'
 
+/**
+ * ニンゲンが所持/設置できるランタンを表すクラス。
+ */
 export class Lantern {
   x: number
   y: number
   cooldownTimer: number
   glowPhase: number
 
+  /**
+   * ランタンを生成する。
+   * @param x 初期X座標
+   * @param y 初期Y座標
+   */
   constructor(x: number, y: number) {
     this.x = x
     this.y = y
@@ -14,14 +22,24 @@ export class Lantern {
     this.glowPhase = rand(0, Math.PI * 2)
   }
 
+  /**
+   * ランタンが発動可能な状態かを返す。
+   */
   isReady(): boolean {
     return this.cooldownTimer <= 0
   }
 
+  /**
+   * ランタンを発動し、クールダウンを開始する。
+   */
   activate(): void {
     this.cooldownTimer = LANTERN_COOLDOWN
   }
 
+  /**
+   * クールダウンと発光位相を更新する。
+   * @param dt 経過フレーム時間
+   */
   update(dt: number): void {
     this.glowPhase += dt * 0.02
     if (this.cooldownTimer > 0) {
@@ -29,6 +47,10 @@ export class Lantern {
     }
   }
 
+  /**
+   * 地面に置かれたランタンを描画する。
+   * @param ctx 描画コンテキスト
+   */
   draw(ctx: CanvasRenderingContext2D): void {
     const r = LANTERN_RADIUS
     const ready = this.isReady()
@@ -75,6 +97,12 @@ export class Lantern {
     ctx.restore()
   }
 
+  /**
+   * ニンゲンが所持しているランタンを描画する。
+   * @param ctx 描画コンテキスト
+   * @param x 描画X座標
+   * @param y 描画Y座標
+   */
   drawCarried(ctx: CanvasRenderingContext2D, x: number, y: number): void {
     const r = LANTERN_RADIUS * 0.7
     const ready = this.isReady()

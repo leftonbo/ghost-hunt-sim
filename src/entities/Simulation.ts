@@ -17,6 +17,9 @@ import { Particle } from './Particle'
 import { Lantern } from './Lantern'
 import { createGhost, pickGhostType } from './ghost-factory'
 
+/**
+ * シミュレーション全体の生成・更新・描画を統括するクラス。
+ */
 export class Simulation {
   canvas: HTMLCanvasElement
   ctx: CanvasRenderingContext2D
@@ -38,6 +41,11 @@ export class Simulation {
   height: number
   ui: UIElements
 
+  /**
+   * シミュレーションを初期化する。
+   * @param canvas 描画先キャンバス
+   * @param ui UI要素参照
+   */
   constructor(canvas: HTMLCanvasElement, ui: UIElements) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')!
@@ -64,6 +72,9 @@ export class Simulation {
     this.resize()
   }
 
+  /**
+   * キャンバスサイズと背景グラデーションを再計算する。
+   */
   resize(): void {
     const container = this.canvas.parentElement!
     const dpr = window.devicePixelRatio || 1
@@ -81,6 +92,9 @@ export class Simulation {
     this.bgGradient.addColorStop(1, BG_COLOR_BOTTOM)
   }
 
+  /**
+   * エンティティを初期配置し、UIと初回描画を更新する。
+   */
   init(): void {
     this.ghosts = []
     this.humans = []
@@ -135,6 +149,9 @@ export class Simulation {
     this.drawFrame(0)
   }
 
+  /**
+   * シミュレーションを開始または再開する。
+   */
   start(): void {
     if (this.state === 'finished') return
     if (this.state === 'idle' || this.state === 'paused') {
@@ -144,6 +161,9 @@ export class Simulation {
     }
   }
 
+  /**
+   * 実行中なら一時停止し、一時停止中なら再開する。
+   */
   pause(): void {
     if (this.state === 'running') {
       this.state = 'paused'
@@ -156,6 +176,9 @@ export class Simulation {
     }
   }
 
+  /**
+   * シミュレーションを初期状態へリセットする。
+   */
   reset(): void {
     this.state = 'idle'
     if (this.animFrameId) {
@@ -166,6 +189,9 @@ export class Simulation {
     this.init()
   }
 
+  /**
+   * 実行中ループを1フレーム進める。
+   */
   loop(): void {
     if (this.state !== 'running') return
     this.animFrameId = requestAnimationFrame((ts) => {
@@ -182,6 +208,11 @@ export class Simulation {
     })
   }
 
+  /**
+   * ゲームロジック一式を更新する。
+   * @param dt 正規化済みフレーム時間
+   * @param time 現在時刻（ms）
+   */
   update(dt: number, time: number): void {
     // ゴースト更新
     for (const ghost of this.ghosts) {
@@ -356,6 +387,9 @@ export class Simulation {
     }
   }
 
+  /**
+   * 終了後の演出ループを更新する。
+   */
   loopFinished(): void {
     this.animFrameId = requestAnimationFrame((ts) => {
       const rawDt = ts - this.lastTimestamp
@@ -388,6 +422,10 @@ export class Simulation {
     })
   }
 
+  /**
+   * 現在フレームの描画を行う。
+   * @param time 現在時刻（ms）
+   */
   drawFrame(time: number): void {
     const ctx = this.ctx
     const w = this.width
@@ -425,6 +463,9 @@ export class Simulation {
     }
   }
 
+  /**
+   * 画面上の統計UIを最新状態へ更新する。
+   */
   updateUI(): void {
     this.ui.ghostCount.textContent = String(this.ghosts.length)
     this.ui.humanCount.textContent = String(this.humans.length)

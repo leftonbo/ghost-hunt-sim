@@ -1,6 +1,9 @@
 import type { ParticleType } from '../core/types'
 import { rand } from '../core/utils'
 
+/**
+ * シミュレーション内のエフェクト粒子を表すクラス。
+ */
 export class Particle {
   x: number
   y: number
@@ -15,6 +18,13 @@ export class Particle {
   maxSize: number
   rotation: number
 
+  /**
+   * パーティクルを生成する。
+   * @param x 初期X座標
+   * @param y 初期Y座標
+   * @param type パーティクル種別
+   * @param color 描画色（省略時は種別ごとの既定色）
+   */
   constructor(x: number, y: number, type: ParticleType, color?: string) {
     this.x = x
     this.y = y
@@ -64,6 +74,10 @@ export class Particle {
     }
   }
 
+  /**
+   * パーティクルの状態を更新し、生存中かどうかを返す。
+   * @param dt 経過フレーム時間
+   */
   update(dt: number): boolean {
     this.life -= this.decay * dt
     this.x += this.vx * dt
@@ -85,6 +99,10 @@ export class Particle {
     return this.life > 0
   }
 
+  /**
+   * パーティクルを描画する。
+   * @param ctx 描画コンテキスト
+   */
   draw(ctx: CanvasRenderingContext2D): void {
     if (this.life <= 0) return
     const alpha = Math.max(0, this.life)

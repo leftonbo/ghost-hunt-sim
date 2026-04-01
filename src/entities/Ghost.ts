@@ -15,6 +15,9 @@ import {
 } from '../core/constants'
 import { rand, dist, normalize, pickGhostColor } from '../core/utils'
 
+/**
+ * すべてのおばけ種別の基底となるクラス。
+ */
 export class Ghost {
   x: number
   y: number
@@ -35,6 +38,11 @@ export class Ghost {
   spawnScale: number
   mistTimer: number
 
+  /**
+   * おばけを生成する。
+   * @param x 初期X座標
+   * @param y 初期Y座標
+   */
   constructor(x: number, y: number) {
     this.x = x
     this.y = y
@@ -56,6 +64,15 @@ export class Ghost {
     this.mistTimer = 0
   }
 
+  /**
+   * おばけの状態更新を行う。
+   * @param humans 現在生存しているニンゲン配列
+   * @param dt 経過フレーム時間
+   * @param _time 現在時刻（未使用）
+   * @param canvasW キャンバス幅
+   * @param canvasH キャンバス高さ
+   * @param ghosts 全おばけ配列
+   */
   update(
     humans: Human[],
     dt: number,
@@ -92,6 +109,12 @@ export class Ghost {
     this.bounceOffWalls(canvasW, canvasH)
   }
 
+  /**
+   * 狩猟状態の更新を行う。
+   * @param humans 現在生存しているニンゲン配列
+   * @param dt 経過フレーム時間
+   * @param ghosts 全おばけ配列
+   */
   updateHunting(humans: Human[], dt: number, ghosts: Ghost[]): void {
     const target = this.findNearestHuman(humans)
     if (target) {
@@ -114,6 +137,10 @@ export class Ghost {
     this.y += this.vy * dt
   }
 
+  /**
+   * 消化状態の更新を行う。
+   * @param dt 経過フレーム時間
+   */
   updateDigesting(dt: number): void {
     if (this.capturedHuman) {
       this.capturedHuman.health -= LIFE_FORCE_DRAIN_RATE * dt
@@ -133,6 +160,10 @@ export class Ghost {
     this.y += Math.cos(this.wobbleTime * 1.2 + this.wobbleOffset * 0.7) * 0.1 * dt
   }
 
+  /**
+   * スタン状態の更新を行う。
+   * @param dt 経過フレーム時間
+   */
   updateStunned(dt: number): void {
     this.vx = 0
     this.vy = 0
@@ -142,6 +173,10 @@ export class Ghost {
     }
   }
 
+  /**
+   * 最寄りのニンゲンを検索する。
+   * @param humans 現在生存しているニンゲン配列
+   */
   findNearestHuman(humans: Human[]): Human | null {
     let nearest: Human | null = null
     let minD = Infinity
@@ -155,20 +190,37 @@ export class Ghost {
     return nearest
   }
 
+  /**
+   * 現在フレームで捕食可能かを返す。
+   */
   canCapture(): boolean {
     return this.state === 'hunting'
   }
 
+  /**
+   * 指定したニンゲンが捕食距離内か判定する。
+   * @param human 判定対象のニンゲン
+   */
   checkCapture(human: Human): boolean {
     return dist(this, human) < CAPTURE_DISTANCE + this.currentRadius * 0.3
   }
 
+  /**
+   * 指定した中心座標・半径の範囲内にいるか判定する。
+   * @param sourceX 判定中心X座標
+   * @param sourceY 判定中心Y座標
+   * @param radius 判定半径
+   */
   isInRange(sourceX: number, sourceY: number, radius: number): boolean {
     const dx = sourceX - this.x
     const dy = sourceY - this.y
     return Math.hypot(dx, dy) < radius
   }
 
+  /**
+   * 捕食を開始して消化状態へ遷移する。
+   * @param human 捕食対象のニンゲン
+   */
   startFeeding(human: Human): void {
     this.state = 'digesting'
     this.capturedHuman = human
@@ -177,6 +229,9 @@ export class Ghost {
     this.targetRadius = this.baseRadius * 1.5
   }
 
+  /**
+   * ニンゲンの脱出成功時の処理を行う。
+   */
   handleEscape(): void {
     if (this.capturedHuman) {
       const human = this.capturedHuman
@@ -196,6 +251,9 @@ export class Ghost {
     this.targetRadius = this.baseRadius
   }
 
+  /**
+   * ランタンなど外部要因によるスタン処理を行う。
+   */
   stunExternal(): void {
     // 消化中の場合、ニンゲンを吐き出す
     if (this.state === 'digesting' && this.capturedHuman) {
@@ -215,12 +273,20 @@ export class Ghost {
     this.targetRadius = this.baseRadius
   }
 
+  /**
+   * 消化完了後に通常状態へ戻す。
+   */
   finishDigestion(): void {
     this.state = 'hunting'
     this.capturedHuman = null
     this.targetRadius = this.baseRadius
   }
 
+  /**
+   * 他のおばけとの分離ベクトルを速度に反映する。
+   * @param ghosts 全おばけ配列
+   * @param dt 経過フレーム時間
+   */
   applySeparation(ghosts: Ghost[], dt: number): void {
     let sepX = 0
     let sepY = 0
@@ -236,6 +302,11 @@ export class Ghost {
     this.vy += sepY * GHOST_SEPARATION_STRENGTH * dt
   }
 
+  /**
+   * 壁との衝突を処理して速度を反射させる。
+   * @param w キャンバス幅
+   * @param h キャンバス高さ
+   */
   bounceOffWalls(w: number, h: number): void {
     const m = WALL_MARGIN + this.currentRadius
     if (this.x < m) {
@@ -256,6 +327,11 @@ export class Ghost {
     }
   }
 
+  /**
+   * おばけ本体を描画する。
+   * @param ctx 描画コンテキスト
+   * @param time 現在時刻（ms）
+   */
   draw(ctx: CanvasRenderingContext2D, time: number): void {
     const scale = this.spawnScale
     if (scale <= 0) return
@@ -281,6 +357,11 @@ export class Ghost {
     ctx.restore()
   }
 
+  /**
+   * おばけの体を描画する。
+   * @param ctx 描画コンテキスト
+   * @param r 現在半径
+   */
   drawBody(ctx: CanvasRenderingContext2D, r: number): void {
     ctx.fillStyle = this.color
     ctx.beginPath()
@@ -299,6 +380,11 @@ export class Ghost {
     ctx.fill()
   }
 
+  /**
+   * 体の発光グラデーションを描画する。
+   * @param ctx 描画コンテキスト
+   * @param r 現在半径
+   */
   drawGlow(ctx: CanvasRenderingContext2D, r: number): void {
     const glow = ctx.createRadialGradient(0, -r * 0.2, 0, 0, -r * 0.2, r * 0.8)
     glow.addColorStop(0, 'rgba(255,255,255,0.15)')
@@ -309,6 +395,12 @@ export class Ghost {
     ctx.fill()
   }
 
+  /**
+   * 消化中のニンゲンシルエットを描画する。
+   * @param ctx 描画コンテキスト
+   * @param r 現在半径
+   * @param time 現在時刻（ms）
+   */
   drawDigestingSilhouette(ctx: CanvasRenderingContext2D, r: number, time: number): void {
     if (this.state !== 'digesting' || !this.capturedHuman) return
     const human = this.capturedHuman
@@ -323,6 +415,12 @@ export class Ghost {
     ctx.globalAlpha = this.opacity
   }
 
+  /**
+   * おばけの顔を描画する。
+   * @param ctx 描画コンテキスト
+   * @param r 現在半径
+   * @param scale 出現スケール
+   */
   drawFace(ctx: CanvasRenderingContext2D, r: number, scale: number): void {
     const eyeY = -r * 0.3
     const eyeSpacing = r * 0.35

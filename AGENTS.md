@@ -74,6 +74,7 @@ ghost-hunt-sim/
 - マジックナンバーは `src/core/constants.ts` にまとめる
 - 型定義は `src/core/types.ts` にまとめる
 - 循環参照回避のため `import type` を使用する
+- 追加・更新するクラスにはクラスJSDocを付与し、公開メソッドには必ずJSDoc（概要と主要@param）を付与する
 
 ## アーキテクチャ
 

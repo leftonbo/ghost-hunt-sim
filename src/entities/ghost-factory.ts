@@ -8,6 +8,14 @@ import { TongueGhost } from './TongueGhost'
 
 const SPECIAL_TYPES: GhostType[] = ['feral', 'suction', 'tongue']
 
+/**
+ * おばけを生成するファクトリー関数。
+ * 追加の種類を実装する際はこの関数を更新すること。
+ * @param x おばけの初期X座標
+ * @param y おばけの初期Y座標
+ * @param type おばけの種類
+ * @returns 生成されたおばけインスタンス
+ */
 export function createGhost(x: number, y: number, type: GhostType): Ghost {
   switch (type) {
     case 'feral':
@@ -21,6 +29,12 @@ export function createGhost(x: number, y: number, type: GhostType): Ghost {
   }
 }
 
+/**
+ * おばけの種類を選択する関数。
+ * モードに応じて特定の種類を選択したり、ランダムに選んだりする。
+ * @param mode おばけの出現種類の選択モード
+ * @returns 選択されたおばけの種類
+ */
 export function pickGhostType(mode: GhostMode): GhostType {
   switch (mode) {
     case 'normal':

@@ -19,6 +19,9 @@ import {
 } from '../core/constants'
 import { rand, dist, normalize, angleDiff } from '../core/utils'
 
+/**
+ * コーン範囲で複数のニンゲンを吸い込み、順番に消化するおばけ。
+ */
 export class SuctionGhost extends Ghost {
   override ghostType: GhostType = 'suction'
   isSucking: boolean = false
@@ -28,6 +31,11 @@ export class SuctionGhost extends Ghost {
   suctionCapturedHumans: Human[] = []
   capturedQueue: Human[] = []
 
+  /**
+   * すいこみおばけを生成する。
+   * @param x 初期X座標
+   * @param y 初期Y座標
+   */
   constructor(x: number, y: number) {
     super(x, y)
     // すいこみは紫系の色
@@ -37,10 +45,19 @@ export class SuctionGhost extends Ghost {
     this.targetRadius = this.baseRadius
   }
 
+  /**
+   * 現在フレームで捕食可能かを返す。
+   */
   override canCapture(): boolean {
     return this.state === 'hunting'
   }
 
+  /**
+   * 狩猟状態の更新を行う。
+   * @param humans 現在生存しているニンゲン配列
+   * @param dt 経過フレーム時間
+   * @param ghosts 全おばけ配列
+   */
   override updateHunting(humans: Human[], dt: number, ghosts: Ghost[]): void {
     if (this.isSucking) {
       // 吸い込み中: ほぼ動けない
@@ -118,6 +135,10 @@ export class SuctionGhost extends Ghost {
     this.applySeparation(ghosts, dt)
   }
 
+  /**
+   * 吸い込み・消化キューを考慮して捕食開始処理を行う。
+   * @param human 捕食対象のニンゲン
+   */
   override startFeeding(human: Human): void {
     human.captured = true
     human.escapeProgress = 0
@@ -138,6 +159,10 @@ export class SuctionGhost extends Ghost {
     }
   }
 
+  /**
+   * 消化状態の更新を行う。
+   * @param dt 経過フレーム時間
+   */
   override updateDigesting(dt: number): void {
     if (this.capturedHuman) {
       this.capturedHuman.health -= LIFE_FORCE_DRAIN_RATE * SUCTION_DRAIN_MULTIPLIER * dt
@@ -158,6 +183,9 @@ export class SuctionGhost extends Ghost {
     this.y += Math.cos(this.wobbleTime * 1.2 + this.wobbleOffset * 0.7) * 0.1 * dt
   }
 
+  /**
+   * 消化完了後の状態遷移を処理する。
+   */
   override finishDigestion(): void {
     if (this.capturedQueue.length > 0) {
       // 次のニンゲンの消化を開始
@@ -171,6 +199,9 @@ export class SuctionGhost extends Ghost {
     }
   }
 
+  /**
+   * ニンゲン脱出時の処理を行う。
+   */
   override handleEscape(): void {
     if (this.capturedHuman) {
       const human = this.capturedHuman
@@ -189,6 +220,9 @@ export class SuctionGhost extends Ghost {
     }
   }
 
+  /**
+   * 外部スタン時に保持しているニンゲンを全解放する。
+   */
   override stunExternal(): void {
     // 吸い込み中のニンゲンを解放
     for (const human of this.suctionCapturedHumans) {
@@ -228,6 +262,11 @@ export class SuctionGhost extends Ghost {
     this.escapedHumans.push(human)
   }
 
+  /**
+   * すいこみおばけ本体と吸い込みエフェクトを描画する。
+   * @param ctx 描画コンテキスト
+   * @param time 現在時刻（ms）
+   */
   override draw(ctx: CanvasRenderingContext2D, time: number): void {
     // 吸い込みコーン描画（ワールド座標）
     if (this.isSucking) {
