@@ -303,13 +303,14 @@ export class Ghost {
   }
 
   /**
-   * 消化完了後に通常状態へ戻す。
+   * 変換済みニンゲンをクリアし、まだ消化中のニンゲンがいなければ通常状態へ戻す。
    */
   finishDigestion(): void {
-    this.state = 'hunting'
-    this.capturedHumans = []
     this.convertedHumans = []
-    this.targetRadius = this.baseRadius
+    if (this.capturedHumans.length === 0) {
+      this.state = 'hunting'
+      this.targetRadius = this.baseRadius
+    }
   }
 
   /**
