@@ -63,6 +63,8 @@ export const FLOCK_ALIGNMENT = 0.02
 export const HUMAN_FLEE_ACCEL = 0.3
 /** 逃走時に直線化を崩す横ステップ係数 */
 export const HUMAN_FLEE_DODGE = 0.12
+/** 逃走緊急度（escapeUrgency）の減衰率（フレーム単位） */
+export const HUMAN_ESCAPE_URGENCY_DECAY = 0.03
 /** 逃走時のニンゲン同士の分離強度 */
 export const FLEE_SEPARATION = 0.08
 /** 逃走後の再逃走を抑制するクールダウンフレーム数 */

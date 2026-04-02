@@ -9,6 +9,7 @@ import {
   FLOCK_SEPARATION,
   HUMAN_FLEE_ACCEL,
   HUMAN_FLEE_DODGE,
+  HUMAN_ESCAPE_URGENCY_DECAY,
   FLEE_SEPARATION,
   FLEE_COOLDOWN,
   CORNER_ESCAPE_ACCEL_BOOST,
@@ -194,7 +195,7 @@ export class Human {
       this.escapeUrgency = maxUrgency
     } else {
       this.fleeTimer = Math.max(0, this.fleeTimer - dt)
-      this.escapeUrgency = Math.max(0, this.escapeUrgency - 0.03 * dt)
+      this.escapeUrgency = Math.max(0, this.escapeUrgency - HUMAN_ESCAPE_URGENCY_DECAY * dt)
     }
     this.fleeing = this.fleeTimer > 0
 
