@@ -417,7 +417,7 @@ export class Ghost {
     const human = this.capturedHuman
     const lifeRatio = human.health / 100
     const silAlpha = 0.3 * lifeRatio
-    const struggleShake = human.stamina > 0 ? Math.sin(time * 0.02) * r * 0.15 : 0
+    const struggleShake = !human.isFatigued ? Math.sin(time * 0.02) * r * 0.15 : 0
     ctx.globalAlpha = silAlpha
     ctx.fillStyle = '#3a2520'
     ctx.beginPath()
