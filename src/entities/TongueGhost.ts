@@ -26,7 +26,7 @@ export class TongueGhost extends Ghost {
   tongueDirX: number = 0
   tongueDirY: number = 0
   tongueTargetHuman: Human | null = null
-  tongueGrabbedHuman: Human | null = null
+  tongueGrabbedHumans: Human[] = []
   tongueCooldown: number = 0
 
   /**
@@ -45,7 +45,8 @@ export class TongueGhost extends Ghost {
    * 現在フレームで捕食可能かを返す。
    */
   override canCapture(): boolean {
-    return this.tongueGrabbedHuman !== null && this.state === 'hunting'
+    return (this.tongueGrabbedHumans.length > 0 && this.state === 'hunting') ||
+      this.state === 'digesting'
   }
 
   // ランタンの光が舌にも当たる
@@ -71,11 +72,23 @@ export class TongueGhost extends Ghost {
    */
   override startFeeding(human: Human): void {
     human.grabbed = false
-    super.startFeeding(human)
-    this.tongueGrabbedHuman = null
-    this.tongueState = 'idle'
-    this.tongueTargetHuman = null
-    this.tongueCooldown = TONGUE_COOLDOWN
+    this.tongueGrabbedHumans = this.tongueGrabbedHumans.filter((h) => h !== human)
+
+    human.captured = true
+    human.escapeProgress = 0
+    this.capturedHumans.push(human)
+
+    if (this.tongueGrabbedHumans.length === 0) {
+      // 全員取り込み完了: 消化状態へ遷移
+      if (this.state !== 'digesting') {
+        this.state = 'digesting'
+      }
+      this.tongueState = 'idle'
+      this.tongueTargetHuman = null
+      this.tongueCooldown = TONGUE_COOLDOWN
+    }
+    this.targetRadius =
+      this.baseRadius * 1.5 + (this.capturedHumans.length - 1) * this.baseRadius * 0.15
   }
 
   /**
@@ -163,16 +176,17 @@ export class TongueGhost extends Ghost {
         this.tongueTipX += this.tongueDirX * TONGUE_EXTEND_SPEED * dt
         this.tongueTipY += this.tongueDirY * TONGUE_EXTEND_SPEED * dt
 
-        // ニンゲンに当たったか判定
+        // ニンゲンに当たったか判定（複数捕獲可能）
         for (const human of humans) {
           if (human.captured || human.grabbed || human.invincibilityTimer > 0) continue
           if (dist({ x: this.tongueTipX, y: this.tongueTipY }, human) < TONGUE_TIP_CAPTURE_DIST) {
-            this.tongueGrabbedHuman = human
+            this.tongueGrabbedHumans.push(human)
             human.grabbed = true
-            this.tongueState = 'retracting'
-            this.tongueTargetHuman = null
-            break
           }
+        }
+        if (this.tongueGrabbedHumans.length > 0) {
+          this.tongueState = 'retracting'
+          this.tongueTargetHuman = null
         }
 
         // 最大射程判定
@@ -185,10 +199,13 @@ export class TongueGhost extends Ghost {
       }
       case 'retracting': {
         // 掴んだニンゲンが他のおばけに捕食された場合はリセット
-        if (this.tongueGrabbedHuman && this.tongueGrabbedHuman.captured) {
-          this.tongueGrabbedHuman.grabbed = false
-          this.tongueGrabbedHuman = null
-        }
+        this.tongueGrabbedHumans = this.tongueGrabbedHumans.filter((h) => {
+          if (h.captured) {
+            h.grabbed = false
+            return false
+          }
+          return true
+        })
 
         // 舌を引っ込める
         const dx = this.x - this.tongueTipX
@@ -197,23 +214,23 @@ export class TongueGhost extends Ghost {
         if (d < TONGUE_TIP_CAPTURE_DIST) {
           // 舌が戻った
           this.tongueState = 'idle'
-          if (!this.tongueGrabbedHuman) {
+          if (this.tongueGrabbedHumans.length === 0) {
             this.tongueCooldown = TONGUE_COOLDOWN
           }
-          // tongueGrabbedHuman がいれば canCapture() が true になり
+          // tongueGrabbedHumans がいれば canCapture() が true になり
           // Simulation の捕食判定で処理される
         } else {
           // ニンゲンを掴んでいる場合は引き寄せ速度（遅め）
-          const retractSpeed = this.tongueGrabbedHuman
+          const retractSpeed = this.tongueGrabbedHumans.length > 0
             ? TONGUE_REEL_SPEED
             : TONGUE_EXTEND_SPEED * 1.5
           this.tongueTipX += (dx / d) * retractSpeed * dt
           this.tongueTipY += (dy / d) * retractSpeed * dt
 
           // 掴んだニンゲンを舌先に追従させる
-          if (this.tongueGrabbedHuman) {
-            this.tongueGrabbedHuman.x = this.tongueTipX
-            this.tongueGrabbedHuman.y = this.tongueTipY
+          for (const h of this.tongueGrabbedHumans) {
+            h.x = this.tongueTipX
+            h.y = this.tongueTipY
           }
         }
 
@@ -234,14 +251,14 @@ export class TongueGhost extends Ghost {
    */
   override stunExternal(): void {
     // 掴んだニンゲンを解放
-    if (this.tongueGrabbedHuman) {
-      this.tongueGrabbedHuman.grabbed = false
-      this.tongueGrabbedHuman.invincibilityTimer = INVINCIBILITY_DURATION
+    for (const h of this.tongueGrabbedHumans) {
+      h.grabbed = false
+      h.invincibilityTimer = INVINCIBILITY_DURATION
     }
     // 舌をリセット
     this.tongueState = 'idle'
     this.tongueTargetHuman = null
-    this.tongueGrabbedHuman = null
+    this.tongueGrabbedHumans = []
     this.tongueCooldown = TONGUE_COOLDOWN
     super.stunExternal()
   }
@@ -282,10 +299,10 @@ export class TongueGhost extends Ghost {
       ctx.fill()
 
       // 掴んだニンゲンの表示
-      if (this.tongueGrabbedHuman) {
+      if (this.tongueGrabbedHumans.length > 0) {
         ctx.fillStyle = 'rgba(255, 200, 100, 0.6)'
         ctx.beginPath()
-        ctx.arc(this.tongueTipX, this.tongueTipY, 8, 0, Math.PI * 2)
+        ctx.arc(this.tongueTipX, this.tongueTipY, 8 + this.tongueGrabbedHumans.length * 2, 0, Math.PI * 2)
         ctx.fill()
       }
 

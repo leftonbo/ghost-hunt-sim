@@ -325,12 +325,11 @@ export class Simulation {
       }
     }
 
-    // 消化完了 → 新おばけ生成
+    // 消化完了 → 新おばけ生成（convertedHumans から1体ずつ生成）
     for (const ghost of this.ghosts) {
-      if (ghost.state === 'releasing') {
-        ghost.finishDigestion()
+      if (ghost.convertedHumans.length === 0) continue
 
-        // 新おばけを生成
+      for (let ci = 0; ci < ghost.convertedHumans.length; ci++) {
         const angle = rand(0, Math.PI * 2)
         const spawnDist = ghost.baseRadius * 2
         const newGhost = createGhost(
@@ -355,6 +354,8 @@ export class Simulation {
         // ポップエフェクト
         this.particles.push(new Particle(ghost.x, ghost.y, 'pop', ghost.color))
       }
+
+      ghost.finishDigestion()
     }
 
     // 脱出したニンゲンを回収して humans 配列に復帰
@@ -410,9 +411,11 @@ export class Simulation {
       }
     }
 
-    // 終了判定（自由なニンゲンがおらず、消化中のおばけもいない場合に終了）
-    const hasDigesting = this.ghosts.some((g) => g.state === 'digesting')
-    if (this.humans.length === 0 && !hasDigesting && this.state === 'running') {
+    // 終了判定（自由なニンゲンがおらず、消化中・変換待ちのおばけもいない場合に終了）
+    const hasPending = this.ghosts.some(
+      (g) => g.state === 'digesting' || g.convertedHumans.length > 0,
+    )
+    if (this.humans.length === 0 && !hasPending && this.state === 'running') {
       this.state = 'finished'
       this.ui.endOverlay.classList.add('visible')
       this.ui.endStats.textContent = `おばけ ${this.ghosts.length} 体 ・ 経過時間 ${formatTime(this.elapsedTime)}`

@@ -43,7 +43,29 @@ export class FeralGhost extends Ghost {
    * 現在フレームで捕食可能かを返す。
    */
   override canCapture(): boolean {
-    return this.state === 'hunting' && this.dashState === 'dashing'
+    return (this.state === 'hunting' && this.dashState === 'dashing') || this.state === 'digesting'
+  }
+
+  /**
+   * ダッシュ中は状態を変えずに捕食を行う。
+   * @param human 捕食対象のニンゲン
+   */
+  override startFeeding(human: Human): void {
+    human.captured = true
+    human.escapeProgress = 0
+    this.capturedHumans.push(human)
+
+    if (this.dashState === 'dashing') {
+      // ダッシュ中: 状態を変えずに続行、半径微増のみ
+      this.targetRadius = this.baseRadius * (1.1 + this.capturedHumans.length * 0.1)
+    } else {
+      // ダッシュ外: 消化状態へ遷移
+      if (this.state !== 'digesting') {
+        this.state = 'digesting'
+      }
+      this.targetRadius =
+        this.baseRadius * 1.5 + (this.capturedHumans.length - 1) * this.baseRadius * 0.15
+    }
   }
 
   /**
@@ -98,6 +120,13 @@ export class FeralGhost extends Ghost {
           this.dashCooldown = FERAL_DASH_COOLDOWN
           this.vx *= 0.2
           this.vy *= 0.2
+          // ダッシュ中に捕まえたニンゲンがいれば消化開始
+          if (this.capturedHumans.length > 0) {
+            this.state = 'digesting'
+            this.targetRadius =
+              this.baseRadius * 1.5 +
+              (this.capturedHumans.length - 1) * this.baseRadius * 0.15
+          }
         }
         break
       }

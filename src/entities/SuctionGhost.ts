@@ -5,8 +5,7 @@ import {
   GHOST_WOBBLE_AMPLITUDE,
   GHOST_WOBBLE_SPEED,
   HEALTH_DRAIN_RATE,
-  ESCAPE_THRESHOLD,
-  STUN_DURATION,
+  MULTI_CAPTURE_DRAIN_MULTIPLIER,
   INVINCIBILITY_DURATION,
   SUCTION_SPEED_MULTIPLIER,
   SUCTION_START_RANGE,
@@ -20,7 +19,7 @@ import {
 import { rand, dist, normalize, angleDiff } from '../core/utils'
 
 /**
- * コーン範囲で複数のニンゲンを吸い込み、順番に消化するおばけ。
+ * コーン範囲で複数のニンゲンを吸い込み、同時に消化するおばけ。
  */
 export class SuctionGhost extends Ghost {
   override ghostType: GhostType = 'suction'
@@ -29,7 +28,6 @@ export class SuctionGhost extends Ghost {
   suctionCooldown: number = 0
   suctionAngle: number = 0
   suctionCapturedHumans: Human[] = []
-  capturedQueue: Human[] = []
 
   /**
    * すいこみおばけを生成する。
@@ -50,7 +48,16 @@ export class SuctionGhost extends Ghost {
    * 現在フレームで捕食可能かを返す。
    */
   override canCapture(): boolean {
-    return this.state === 'hunting'
+    return this.state === 'hunting' || this.state === 'digesting'
+  }
+
+  /**
+   * 捕食インデックスに応じた生気吸収レートを返す。
+   * @param index 捕食リスト内のインデックス（0始まり）
+   */
+  override getHealthDrainRate(index: number): number {
+    const base = HEALTH_DRAIN_RATE * SUCTION_DRAIN_MULTIPLIER
+    return index === 0 ? base : base * MULTI_CAPTURE_DRAIN_MULTIPLIER
   }
 
   /**
@@ -92,12 +99,14 @@ export class SuctionGhost extends Ghost {
 
         // 吸い込んだニンゲンがいれば消化開始
         if (this.suctionCapturedHumans.length > 0) {
-          this.capturedHuman = this.suctionCapturedHumans.shift()!
-          this.capturedQueue = [...this.suctionCapturedHumans]
+          for (const human of this.suctionCapturedHumans) {
+            this.capturedHumans.push(human)
+          }
           this.suctionCapturedHumans = []
           this.state = 'digesting'
           this.targetRadius =
-            this.baseRadius * 1.5 + this.capturedQueue.length * this.baseRadius * 0.15
+            this.baseRadius * 1.5 +
+            (this.capturedHumans.length - 1) * this.baseRadius * 0.15
         }
       }
     } else {
@@ -137,7 +146,7 @@ export class SuctionGhost extends Ghost {
   }
 
   /**
-   * 吸い込み・消化キューを考慮して捕食開始処理を行う。
+   * 吸い込みフェーズを考慮した捕食開始処理を行う。
    * @param human 捕食対象のニンゲン
    */
   override startFeeding(human: Human): void {
@@ -145,85 +154,22 @@ export class SuctionGhost extends Ghost {
     human.escapeProgress = 0
 
     if (this.isSucking) {
-      // 吸い込み中: キューに追加、状態は変えない
+      // 吸い込み中: 吸い込みキューに追加、状態は変えない
       this.suctionCapturedHumans.push(human)
       this.targetRadius = this.baseRadius * (1.2 + this.suctionCapturedHumans.length * 0.15)
-    } else if (this.state === 'digesting') {
-      // 既に消化中: キューに追加
-      this.capturedQueue.push(human)
-      this.targetRadius = this.baseRadius * 1.5 + this.capturedQueue.length * this.baseRadius * 0.15
     } else {
-      // 通常の捕食開始
-      this.state = 'digesting'
-      this.capturedHuman = human
-      this.targetRadius = this.baseRadius * 1.5
-    }
-  }
-
-  /**
-   * 消化状態の更新を行う。
-   * @param dt 経過フレーム時間
-   */
-  override updateDigesting(dt: number): void {
-    if (this.capturedHuman) {
-      this.capturedHuman.health -= HEALTH_DRAIN_RATE * SUCTION_DRAIN_MULTIPLIER * dt
-      this.capturedHuman.updateCaptured(dt)
-
-      if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {
-        this.handleEscape()
-        return
+      // 通常の捕食開始（基底の配列管理に委譲）
+      this.capturedHumans.push(human)
+      if (this.state !== 'digesting') {
+        this.state = 'digesting'
       }
-
-      if (this.capturedHuman.health <= 0) {
-        this.capturedHuman.health = 0
-        this.state = 'releasing'
-      }
-    }
-
-    this.x += Math.sin(this.wobbleTime * 1.5 + this.wobbleOffset) * 0.15 * dt
-    this.y += Math.cos(this.wobbleTime * 1.2 + this.wobbleOffset * 0.7) * 0.1 * dt
-  }
-
-  /**
-   * 消化完了後の状態遷移を処理する。
-   */
-  override finishDigestion(): void {
-    if (this.capturedQueue.length > 0) {
-      // 次のニンゲンの消化を開始
-      this.capturedHuman = this.capturedQueue.shift()!
-      this.state = 'digesting'
-      this.targetRadius = this.baseRadius * 1.5 + this.capturedQueue.length * this.baseRadius * 0.15
-    } else {
-      this.state = 'hunting'
-      this.capturedHuman = null
-      this.targetRadius = this.baseRadius
+      this.targetRadius =
+        this.baseRadius * 1.5 + (this.capturedHumans.length - 1) * this.baseRadius * 0.15
     }
   }
 
   /**
-   * ニンゲン脱出時の処理を行う。
-   */
-  override handleEscape(): void {
-    if (this.capturedHuman) {
-      const human = this.capturedHuman
-      human.captured = false
-      human.invincibilityTimer = INVINCIBILITY_DURATION
-      this.releaseHumanFromBody(human)
-      this.capturedHuman = null
-    }
-    if (this.capturedQueue.length > 0) {
-      // 次のニンゲンの消化を開始
-      this.capturedHuman = this.capturedQueue.shift()!
-      this.state = 'digesting'
-    } else {
-      this.state = 'stunned'
-      this.stunTimer = STUN_DURATION
-      this.targetRadius = this.baseRadius
-    }
-  }
-
-  /**
-   * 外部スタン時に保持しているニンゲンを全解放する。
+   * 外部スタン時に吸い込み中と消化中のニンゲンを全解放する。
    */
   override stunExternal(): void {
     // 吸い込み中のニンゲンを解放
@@ -235,36 +181,8 @@ export class SuctionGhost extends Ghost {
     this.suctionCapturedHumans = []
     this.isSucking = false
 
-    // キュー内のニンゲンを解放
-    for (const human of this.capturedQueue) {
-      human.captured = false
-      human.invincibilityTimer = INVINCIBILITY_DURATION
-      this.releaseHumanFromBody(human)
-    }
-    this.capturedQueue = []
-
-    // 現在消化中のニンゲンを解放
-    if (this.state === 'digesting' && this.capturedHuman) {
-      const human = this.capturedHuman
-      human.captured = false
-      human.invincibilityTimer = INVINCIBILITY_DURATION
-      this.releaseHumanFromBody(human)
-      this.capturedHuman = null
-    }
-
-    this.state = 'stunned'
-    this.stunTimer = STUN_DURATION
-    this.targetRadius = this.baseRadius
-  }
-
-  private releaseHumanFromBody(human: Human): void {
-    const angle = rand(0, Math.PI * 2)
-    const escapeDist = this.currentRadius + 10
-    human.x = this.x + Math.cos(angle) * escapeDist
-    human.y = this.y + Math.sin(angle) * escapeDist
-    human.vx = Math.cos(angle) * 3
-    human.vy = Math.sin(angle) * 3
-    this.escapedHumans.push(human)
+    // 消化中のニンゲンは基底クラスが解放
+    super.stunExternal()
   }
 
   /**
