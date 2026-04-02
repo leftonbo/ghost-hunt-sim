@@ -7,9 +7,17 @@ import {
   HUMAN_RADIUS,
   FLOCK_COHESION,
   FLOCK_SEPARATION,
+  HUMAN_FLEE_ACCEL,
+  HUMAN_FLEE_DODGE,
   FLEE_SEPARATION,
   FLEE_COOLDOWN,
+  CORNER_ESCAPE_ACCEL_BOOST,
+  CORNER_SEPARATION_BOOST,
+  CORNER_WALL_OPPOSING_DAMP,
+  CORNER_WALL_AVOID_REDUCTION,
   WALL_MARGIN,
+  WALL_BOUNCE_BOOST,
+  WALL_BOUNCE_JITTER,
   WALL_AVOIDANCE_RADIUS,
   WALL_AVOIDANCE_STRENGTH,
   MAX_HEALTH,
@@ -51,6 +59,8 @@ export class Human {
   grabbed: boolean
   escapeProgress: number
   lantern: Lantern | null
+  escapeUrgency: number
+  corneredness: number
   cfgBaseSpeed: number
   cfgMaxHealth: number
   cfgMaxStamina: number
@@ -84,6 +94,8 @@ export class Human {
     this.grabbed = false
     this.escapeProgress = 0
     this.lantern = null
+    this.escapeUrgency = 0
+    this.corneredness = 0
   }
 
   /**
@@ -155,11 +167,13 @@ export class Human {
 
     const speedMultiplier = this.isFatigued ? FATIGUE_SPEED_MULTIPLIER : 1.0
     const speed = this.cfgBaseSpeed * speedMultiplier
+    this.corneredness = this.computeCorneredness(canvasW, canvasH)
 
     // おばけ検知
     let fleeVx = 0
     let fleeVy = 0
     let threatened = false
+    let maxUrgency = 0
 
     for (const g of ghosts) {
       const d = dist(this, g)
@@ -170,14 +184,17 @@ export class Human {
         fleeVx += (dx / d) * urgency
         fleeVy += (dy / d) * urgency
         threatened = true
+        maxUrgency = Math.max(maxUrgency, urgency)
       }
     }
 
     // 逃走クールダウン管理
     if (threatened) {
       this.fleeTimer = FLEE_COOLDOWN
+      this.escapeUrgency = maxUrgency
     } else {
       this.fleeTimer = Math.max(0, this.fleeTimer - dt)
+      this.escapeUrgency = Math.max(0, this.escapeUrgency - 0.03 * dt)
     }
     this.fleeing = this.fleeTimer > 0
 
@@ -185,8 +202,18 @@ export class Human {
       // 逃走（脅威検知中は加速、クールダウン中は慣性で移動）
       if (threatened) {
         const n = normalize(fleeVx, fleeVy)
-        this.vx += n.x * speed * 0.3 * dt
-        this.vy += n.y * speed * 0.3 * dt
+        const toCenter = normalize(canvasW * 0.5 - this.x, canvasH * 0.5 - this.y)
+        const perpX = -n.y
+        const perpY = n.x
+        let dodgeSign = Math.sign(perpX * toCenter.x + perpY * toCenter.y)
+        if (dodgeSign === 0) {
+          dodgeSign = Math.sin(this.legPhase * 0.3) >= 0 ? 1 : -1
+        }
+
+        const fleeAccel = HUMAN_FLEE_ACCEL * (1 + this.corneredness * CORNER_ESCAPE_ACCEL_BOOST)
+        const dodgeAccel = HUMAN_FLEE_DODGE * (0.4 + this.escapeUrgency * 0.6)
+        this.vx += (n.x * fleeAccel + perpX * dodgeSign * dodgeAccel) * speed * dt
+        this.vy += (n.y * fleeAccel + perpY * dodgeSign * dodgeAccel) * speed * dt
       }
       // 逃走中もニンゲン同士の分離力を適用（固まり防止）
       this.applySeparation(humans, dt, FLEE_SEPARATION)
@@ -251,6 +278,26 @@ export class Human {
   }
 
   /**
+   * 角に追い詰められている度合いを 0〜1 で算出する。
+   * @param w キャンバス幅
+   * @param h キャンバス高さ
+   */
+  computeCorneredness(w: number, h: number): number {
+    const m = WALL_MARGIN + HUMAN_RADIUS
+    const distLeft = Math.max(0, this.x - m)
+    const distRight = Math.max(0, w - m - this.x)
+    const distTop = Math.max(0, this.y - m)
+    const distBottom = Math.max(0, h - m - this.y)
+
+    const nearX =
+      1 - Math.min(WALL_AVOIDANCE_RADIUS, Math.min(distLeft, distRight)) / WALL_AVOIDANCE_RADIUS
+    const nearY =
+      1 - Math.min(WALL_AVOIDANCE_RADIUS, Math.min(distTop, distBottom)) / WALL_AVOIDANCE_RADIUS
+
+    return Math.max(0, Math.min(1, nearX * nearY))
+  }
+
+  /**
    * 近接した他ニンゲンとの分離ベクトルを速度に反映する。
    * @param humans 全ニンゲン配列
    * @param dt 経過フレーム時間
@@ -269,8 +316,9 @@ export class Human {
       }
     }
 
-    this.vx += sepX * strength * dt
-    this.vy += sepY * strength * dt
+    const cornerBoost = this.fleeing ? 1 + this.corneredness * CORNER_SEPARATION_BOOST : 1
+    this.vx += sepX * strength * cornerBoost * dt
+    this.vy += sepY * strength * cornerBoost * dt
   }
 
   /**
@@ -314,33 +362,64 @@ export class Human {
    */
   applyWallAvoidance(w: number, h: number, speed: number, dt: number): void {
     const m = WALL_MARGIN + HUMAN_RADIUS
-    let avoidVx = 0
-    let avoidVy = 0
 
     const distLeft = this.x - m
     const distRight = w - m - this.x
     const distTop = this.y - m
     const distBottom = h - m - this.y
 
+    let leftStrength = 0
+    let rightStrength = 0
+    let topStrength = 0
+    let bottomStrength = 0
+
     if (distLeft < WALL_AVOIDANCE_RADIUS && distLeft >= 0) {
       const strength = 1 - distLeft / WALL_AVOIDANCE_RADIUS
-      avoidVx += strength * strength
+      leftStrength = strength * strength
     }
     if (distRight < WALL_AVOIDANCE_RADIUS && distRight >= 0) {
       const strength = 1 - distRight / WALL_AVOIDANCE_RADIUS
-      avoidVx -= strength * strength
+      rightStrength = strength * strength
     }
     if (distTop < WALL_AVOIDANCE_RADIUS && distTop >= 0) {
       const strength = 1 - distTop / WALL_AVOIDANCE_RADIUS
-      avoidVy += strength * strength
+      topStrength = strength * strength
     }
     if (distBottom < WALL_AVOIDANCE_RADIUS && distBottom >= 0) {
       const strength = 1 - distBottom / WALL_AVOIDANCE_RADIUS
-      avoidVy -= strength * strength
+      bottomStrength = strength * strength
     }
 
-    this.vx += avoidVx * WALL_AVOIDANCE_STRENGTH * speed * dt
-    this.vy += avoidVy * WALL_AVOIDANCE_STRENGTH * speed * dt
+    // 角近傍で相反する回避力が相殺されるのを防ぐ。
+    if (leftStrength > 0 && rightStrength > 0) {
+      const preferX = this.vx !== 0 ? Math.sign(this.vx) : this.x < w * 0.5 ? 1 : -1
+      if (preferX >= 0) {
+        rightStrength *= CORNER_WALL_OPPOSING_DAMP
+      } else {
+        leftStrength *= CORNER_WALL_OPPOSING_DAMP
+      }
+    }
+
+    if (topStrength > 0 && bottomStrength > 0) {
+      const preferY = this.vy !== 0 ? Math.sign(this.vy) : this.y < h * 0.5 ? 1 : -1
+      if (preferY >= 0) {
+        bottomStrength *= CORNER_WALL_OPPOSING_DAMP
+      } else {
+        topStrength *= CORNER_WALL_OPPOSING_DAMP
+      }
+    }
+
+    const avoidVx = leftStrength - rightStrength
+    const avoidVy = topStrength - bottomStrength
+
+    let avoidMultiplier = 1
+    if (this.fleeing && this.corneredness > 0) {
+      const pressure = this.corneredness * (0.4 + this.escapeUrgency * 0.6)
+      avoidMultiplier = Math.max(0.25, 1 - pressure * CORNER_WALL_AVOID_REDUCTION)
+    }
+
+    this.vx += avoidVx * WALL_AVOIDANCE_STRENGTH * avoidMultiplier * speed * dt
+    this.vy += avoidVy * WALL_AVOIDANCE_STRENGTH * avoidMultiplier * speed * dt
   }
 
   /**
@@ -350,25 +429,35 @@ export class Human {
    */
   bounceOffWalls(w: number, h: number): void {
     const m = WALL_MARGIN + HUMAN_RADIUS
+    let hitX = 0
+    let hitY = 0
+
     if (this.x < m) {
       this.x = m
-      this.vx = Math.abs(this.vx)
-      this.wanderAngle = rand(-Math.PI / 2, Math.PI / 2)
+      this.vx = Math.abs(this.vx) * WALL_BOUNCE_BOOST
+      hitX = 1
     }
     if (this.x > w - m) {
       this.x = w - m
-      this.vx = -Math.abs(this.vx)
-      this.wanderAngle = rand(Math.PI / 2, Math.PI * 1.5)
+      this.vx = -Math.abs(this.vx) * WALL_BOUNCE_BOOST
+      hitX = -1
     }
     if (this.y < m) {
       this.y = m
-      this.vy = Math.abs(this.vy)
-      this.wanderAngle = rand(0, Math.PI)
+      this.vy = Math.abs(this.vy) * WALL_BOUNCE_BOOST
+      hitY = 1
     }
     if (this.y > h - m) {
       this.y = h - m
-      this.vy = -Math.abs(this.vy)
-      this.wanderAngle = rand(-Math.PI, 0)
+      this.vy = -Math.abs(this.vy) * WALL_BOUNCE_BOOST
+      hitY = -1
+    }
+
+    if (hitX !== 0 || hitY !== 0) {
+      const inward = normalize(hitX, hitY)
+      const baseAngle = Math.atan2(inward.y, inward.x)
+      const jitter = this.fleeing ? WALL_BOUNCE_JITTER : Math.PI / 3
+      this.wanderAngle = rand(baseAngle - jitter, baseAngle + jitter)
     }
   }
 
