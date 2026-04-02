@@ -59,6 +59,7 @@ export class Human {
   captured: boolean
   grabbed: boolean
   escapeProgress: number
+  invincibilityTimer: number
   lantern: Lantern | null
   escapeUrgency: number
   corneredness: number
@@ -94,6 +95,7 @@ export class Human {
     this.captured = false
     this.grabbed = false
     this.escapeProgress = 0
+    this.invincibilityTimer = 0
     this.lantern = null
     this.escapeUrgency = 0
     this.corneredness = 0
@@ -165,6 +167,11 @@ export class Human {
 
     // 舌に掴まれている場合は移動をスキップ（座標はTongueGhostが制御）
     if (this.grabbed) return
+
+    // 無敵タイマー減少
+    if (this.invincibilityTimer > 0) {
+      this.invincibilityTimer = Math.max(0, this.invincibilityTimer - dt)
+    }
 
     const speedMultiplier = this.isFatigued ? FATIGUE_SPEED_MULTIPLIER : 1.0
     const speed = this.cfgBaseSpeed * speedMultiplier
@@ -256,7 +263,7 @@ export class Human {
 
     // スタミナ管理
     const maxSt = this.effectiveMaxStamina()
-    if (this.fleeing && !this.isFatigued) {
+    if (this.fleeing && !this.isFatigued && this.invincibilityTimer <= 0) {
       this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN_RATE * dt)
     } else {
       this.stamina = Math.min(maxSt, this.stamina + maxSt * STAMINA_RECOVERY_RATE * dt)
@@ -266,7 +273,7 @@ export class Human {
     if (this.stamina <= 0) {
       this.isFatigued = true
     }
-    if (this.isFatigued && this.stamina >= maxSt) {
+    if (this.isFatigued && (this.stamina >= maxSt || this.invincibilityTimer > 0)) {
       this.isFatigued = false
     }
 
@@ -479,7 +486,9 @@ export class Human {
     // 生気低下で薄くなる + 疲労で更に薄くなる
     const lifeAlpha = 0.5 + 0.5 * (this.health / MAX_HEALTH)
     const fatigueAlpha = this.isFatigued ? 0.6 : 1.0
-    ctx.globalAlpha = 0.9 * lifeAlpha * fatigueAlpha
+    // 無敵中は点滅表示
+    const invincibleAlpha = this.invincibilityTimer > 0 ? 0.3 + Math.abs(Math.sin(Date.now() * 0.008)) * 0.7 : 1.0
+    ctx.globalAlpha = 0.9 * lifeAlpha * fatigueAlpha * invincibleAlpha
 
     // 体
     ctx.fillStyle = this.color

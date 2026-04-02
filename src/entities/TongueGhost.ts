@@ -11,6 +11,7 @@ import {
   TONGUE_COOLDOWN,
   TONGUE_TIP_CAPTURE_DIST,
   TONGUE_REEL_SPEED,
+  INVINCIBILITY_DURATION,
 } from '../core/constants'
 import { rand, dist, normalize } from '../core/utils'
 
@@ -164,7 +165,7 @@ export class TongueGhost extends Ghost {
 
         // ニンゲンに当たったか判定
         for (const human of humans) {
-          if (human.captured || human.grabbed) continue
+          if (human.captured || human.grabbed || human.invincibilityTimer > 0) continue
           if (dist({ x: this.tongueTipX, y: this.tongueTipY }, human) < TONGUE_TIP_CAPTURE_DIST) {
             this.tongueGrabbedHuman = human
             human.grabbed = true
@@ -235,6 +236,7 @@ export class TongueGhost extends Ghost {
     // 掴んだニンゲンを解放
     if (this.tongueGrabbedHuman) {
       this.tongueGrabbedHuman.grabbed = false
+      this.tongueGrabbedHuman.invincibilityTimer = INVINCIBILITY_DURATION
     }
     // 舌をリセット
     this.tongueState = 'idle'
