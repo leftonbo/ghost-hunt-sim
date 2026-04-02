@@ -47,7 +47,7 @@ export const ESCAPE_THRESHOLD = 100
 export const STUN_DURATION = 120
 
 // ニンゲン無敵パラメータ
-/** 脱出後の無敵フレーム数（3秒 @60fps） */
+/** 脱出/外部スタン後の無敵フレーム数（3秒 @60fps） */
 export const INVINCIBILITY_DURATION = 180
 
 // ニンゲン視界・群れ行動
