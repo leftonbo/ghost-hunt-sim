@@ -23,6 +23,8 @@ export const CAPTURE_DISTANCE = 18
 export const MAX_HEALTH = 100
 /** 捕食中に生気が減少するフレームあたりの量 */
 export const HEALTH_DRAIN_RATE = 0.5
+/** 複数捕食時の2人目以降の生気吸収効率倍率 */
+export const MULTI_CAPTURE_DRAIN_MULTIPLIER = 0.7
 
 // スタミナパラメータ
 /** ニンゲンの最大スタミナ */

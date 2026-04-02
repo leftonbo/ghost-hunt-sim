@@ -9,6 +9,7 @@ import {
   GHOST_SEPARATION_STRENGTH,
   CAPTURE_DISTANCE,
   HEALTH_DRAIN_RATE,
+  MULTI_CAPTURE_DRAIN_MULTIPLIER,
   ESCAPE_THRESHOLD,
   STUN_DURATION,
   INVINCIBILITY_DURATION,
@@ -35,7 +36,8 @@ export class Ghost {
   targetRadius: number
   state: GhostState
   ghostType: GhostType
-  capturedHuman: Human | null
+  capturedHumans: Human[]
+  convertedHumans: Human[]
   escapedHumans: Human[]
   stunTimer: number
   wobbleOffset: number
@@ -62,7 +64,8 @@ export class Ghost {
     this.targetRadius = GHOST_BASE_RADIUS
     this.state = 'hunting'
     this.ghostType = 'normal'
-    this.capturedHuman = null
+    this.capturedHumans = []
+    this.convertedHumans = []
     this.escapedHumans = []
     this.stunTimer = 0
     this.wobbleOffset = rand(0, Math.PI * 2)
@@ -107,8 +110,6 @@ export class Ghost {
       case 'digesting':
         this.updateDigesting(dt)
         break
-      case 'releasing':
-        break
       case 'stunned':
         this.updateStunned(dt)
         break
@@ -151,20 +152,42 @@ export class Ghost {
    * @param dt 経過フレーム時間
    */
   updateDigesting(dt: number): void {
-    if (this.capturedHuman) {
-      this.capturedHuman.health -= HEALTH_DRAIN_RATE * dt
-      this.capturedHuman.updateCaptured(dt)
+    let hadEscape = false
+    for (let i = this.capturedHumans.length - 1; i >= 0; i--) {
+      const human = this.capturedHumans[i]
+      human.health -= this.getHealthDrainRate(i) * dt
+      human.updateCaptured(dt)
 
-      if (this.capturedHuman.escapeProgress >= ESCAPE_THRESHOLD) {
-        this.handleEscape()
-        return
+      if (human.escapeProgress >= ESCAPE_THRESHOLD) {
+        // 脱出成功
+        human.captured = false
+        human.invincibilityTimer = INVINCIBILITY_DURATION
+        this.releaseHumanFromBody(human)
+        this.capturedHumans.splice(i, 1)
+        hadEscape = true
+        continue
       }
 
-      if (this.capturedHuman.health <= 0) {
-        this.capturedHuman.health = 0
-        this.state = 'releasing'
+      if (human.health <= 0) {
+        human.health = 0
+        this.capturedHumans.splice(i, 1)
+        this.convertedHumans.push(human)
       }
     }
+
+    if (this.capturedHumans.length === 0) {
+      if (hadEscape) {
+        this.state = 'stunned'
+        this.stunTimer = STUN_DURATION
+      } else {
+        this.state = 'hunting'
+      }
+      this.targetRadius = this.baseRadius
+    } else {
+      this.targetRadius =
+        this.baseRadius * 1.5 + (this.capturedHumans.length - 1) * this.baseRadius * 0.15
+    }
+
     this.x += Math.sin(this.wobbleTime * 1.5 + this.wobbleOffset) * 0.15 * dt
     this.y += Math.cos(this.wobbleTime * 1.2 + this.wobbleOffset * 0.7) * 0.1 * dt
   }
@@ -203,7 +226,18 @@ export class Ghost {
    * 現在フレームで捕食可能かを返す。
    */
   canCapture(): boolean {
-    return this.state === 'hunting'
+    return this.state === 'hunting' || this.state === 'digesting'
+  }
+
+  /**
+   * 消化中・変換待ち・捕食中のニンゲンが残っているかを返す。
+   */
+  hasPendingHumans(): boolean {
+    return (
+      this.state === 'digesting' ||
+      this.capturedHumans.length > 0 ||
+      this.convertedHumans.length > 0
+    )
   }
 
   /**
@@ -231,66 +265,63 @@ export class Ghost {
    * @param human 捕食対象のニンゲン
    */
   startFeeding(human: Human): void {
-    this.state = 'digesting'
-    this.capturedHuman = human
     human.captured = true
     human.escapeProgress = 0
-    this.targetRadius = this.baseRadius * 1.5
+    this.capturedHumans.push(human)
+    if (this.state !== 'digesting') {
+      this.state = 'digesting'
+    }
+    this.targetRadius =
+      this.baseRadius * 1.5 + (this.capturedHumans.length - 1) * this.baseRadius * 0.15
   }
 
   /**
-   * ニンゲンの脱出成功時の処理を行う。
+   * 指定したニンゲンをランダム方向にはじき出す。
+   * @param human 解放対象のニンゲン
    */
-  handleEscape(): void {
-    if (this.capturedHuman) {
-      const human = this.capturedHuman
-      human.captured = false
-      // ランダム方向にはじき出す
-      const angle = rand(0, Math.PI * 2)
-      const escapeDist = this.currentRadius + 10
-      human.x = this.x + Math.cos(angle) * escapeDist
-      human.y = this.y + Math.sin(angle) * escapeDist
-      human.vx = Math.cos(angle) * 3
-      human.vy = Math.sin(angle) * 3
-      human.invincibilityTimer = INVINCIBILITY_DURATION
-      this.escapedHumans.push(human)
-      this.capturedHuman = null
-    }
-    this.state = 'stunned'
-    this.stunTimer = STUN_DURATION
-    this.targetRadius = this.baseRadius
+  releaseHumanFromBody(human: Human): void {
+    const angle = rand(0, Math.PI * 2)
+    const escapeDist = this.currentRadius + 10
+    human.x = this.x + Math.cos(angle) * escapeDist
+    human.y = this.y + Math.sin(angle) * escapeDist
+    human.vx = Math.cos(angle) * 3
+    human.vy = Math.sin(angle) * 3
+    this.escapedHumans.push(human)
+  }
+
+  /**
+   * 捕食インデックスに応じた生気吸収レートを返す。
+   * @param index 捕食リスト内のインデックス（0始まり）
+   */
+  getHealthDrainRate(index: number): number {
+    return index === 0 ? HEALTH_DRAIN_RATE : HEALTH_DRAIN_RATE * MULTI_CAPTURE_DRAIN_MULTIPLIER
   }
 
   /**
    * ランタンなど外部要因によるスタン処理を行う。
    */
   stunExternal(): void {
-    // 消化中の場合、ニンゲンを吐き出す
-    if (this.state === 'digesting' && this.capturedHuman) {
-      const human = this.capturedHuman
+    // 消化中の場合、全ニンゲンを吐き出す
+    for (const human of this.capturedHumans) {
       human.captured = false
-      const angle = rand(0, Math.PI * 2)
-      const escapeDist = this.currentRadius + 10
-      human.x = this.x + Math.cos(angle) * escapeDist
-      human.y = this.y + Math.sin(angle) * escapeDist
-      human.vx = Math.cos(angle) * 3
-      human.vy = Math.sin(angle) * 3
       human.invincibilityTimer = INVINCIBILITY_DURATION
-      this.escapedHumans.push(human)
-      this.capturedHuman = null
+      this.releaseHumanFromBody(human)
     }
+    this.capturedHumans = []
     this.state = 'stunned'
     this.stunTimer = STUN_DURATION
     this.targetRadius = this.baseRadius
   }
 
   /**
-   * 消化完了後に通常状態へ戻す。
+   * 変換済みニンゲンをクリアし、まだ消化中のニンゲンがいなければ通常状態へ戻す。
    */
   finishDigestion(): void {
-    this.state = 'hunting'
-    this.capturedHuman = null
-    this.targetRadius = this.baseRadius
+    this.convertedHumans = []
+    if (this.capturedHumans.length === 0 && this.state === 'digesting') {
+      this.state = 'hunting'
+      this.targetRadius = this.baseRadius
+    }
   }
 
   /**
@@ -413,16 +444,29 @@ export class Ghost {
    * @param time 現在時刻（ms）
    */
   drawDigestingSilhouette(ctx: CanvasRenderingContext2D, r: number, time: number): void {
-    if (this.state !== 'digesting' || !this.capturedHuman) return
-    const human = this.capturedHuman
-    const lifeRatio = human.health / 100
-    const silAlpha = 0.3 * lifeRatio
-    const struggleShake = !human.isFatigued ? Math.sin(time * 0.02) * r * 0.15 : 0
-    ctx.globalAlpha = silAlpha
-    ctx.fillStyle = '#3a2520'
-    ctx.beginPath()
-    ctx.arc(struggleShake, r * 0.05, r * 0.35 * (0.7 + lifeRatio * 0.3), 0, Math.PI * 2)
-    ctx.fill()
+    if (this.state !== 'digesting' || this.capturedHumans.length === 0) return
+    const count = this.capturedHumans.length
+    for (let i = 0; i < count; i++) {
+      const human = this.capturedHumans[i]
+      const lifeRatio = human.health / 100
+      const silAlpha = 0.3 * lifeRatio
+      const angleOffset = count > 1 ? ((Math.PI * 2) / count) * i : 0
+      const spread = count > 1 ? r * 0.2 : 0
+      const offsetX = Math.cos(angleOffset) * spread
+      const offsetY = Math.sin(angleOffset) * spread
+      const struggleShake = !human.isFatigued ? Math.sin(time * 0.02 + i * 1.5) * r * 0.15 : 0
+      ctx.globalAlpha = silAlpha
+      ctx.fillStyle = '#3a2520'
+      ctx.beginPath()
+      ctx.arc(
+        offsetX + struggleShake,
+        r * 0.05 + offsetY,
+        r * 0.35 * (0.7 + lifeRatio * 0.3) * (count > 1 ? 0.8 : 1),
+        0,
+        Math.PI * 2,
+      )
+      ctx.fill()
+    }
     ctx.globalAlpha = this.opacity
   }
 
