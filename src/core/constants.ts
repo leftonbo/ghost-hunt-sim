@@ -59,10 +59,24 @@ export const FLOCK_SEPARATION = 0.05
 export const FLOCK_ALIGNMENT = 0.02
 
 // ニンゲン逃走時パラメータ
+/** ニンゲンの基本逃走加速度係数 */
+export const HUMAN_FLEE_ACCEL = 0.3
+/** 逃走時に直線化を崩す横ステップ係数 */
+export const HUMAN_FLEE_DODGE = 0.12
+/** 逃走緊急度（escapeUrgency）の減衰率（フレーム単位） */
+export const HUMAN_ESCAPE_URGENCY_DECAY = 0.03
 /** 逃走時のニンゲン同士の分離強度 */
 export const FLEE_SEPARATION = 0.08
 /** 逃走後の再逃走を抑制するクールダウンフレーム数 */
 export const FLEE_COOLDOWN = 60
+/** 角に追い詰められた際に逃走加速度へ乗せる追加倍率 */
+export const CORNER_ESCAPE_ACCEL_BOOST = 0.9
+/** 角に追い詰められた際のニンゲン同士分離の追加倍率 */
+export const CORNER_SEPARATION_BOOST = 1.1
+/** 角で相反する壁回避力を抑制する倍率 */
+export const CORNER_WALL_OPPOSING_DAMP = 0.35
+/** 角で逃走優先にする際の壁回避低減率 */
+export const CORNER_WALL_AVOID_REDUCTION = 0.65
 
 // おばけサイズ・ゆらぎ
 /** おばけの基本半径 */
@@ -105,6 +119,10 @@ export const BG_COLOR_BOTTOM = '#0d1b3e'
 // 壁マージン
 /** 壁との最小マージン */
 export const WALL_MARGIN = 10
+/** 壁反射時の速度ブースト倍率 */
+export const WALL_BOUNCE_BOOST = 1.2
+/** 壁反射時に進行方向へ与える角度ゆらぎ（ラジアン） */
+export const WALL_BOUNCE_JITTER = Math.PI / 6
 
 // 壁回避ステアリング
 /** 壁回避を開始する距離 */
