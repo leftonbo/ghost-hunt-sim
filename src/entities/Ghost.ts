@@ -230,6 +230,17 @@ export class Ghost {
   }
 
   /**
+   * 消化中・変換待ち・捕食中のニンゲンが残っているかを返す。
+   */
+  hasPendingHumans(): boolean {
+    return (
+      this.state === 'digesting' ||
+      this.capturedHumans.length > 0 ||
+      this.convertedHumans.length > 0
+    )
+  }
+
+  /**
    * 指定したニンゲンが捕食距離内か判定する。
    * @param human 判定対象のニンゲン
    */
@@ -307,7 +318,7 @@ export class Ghost {
    */
   finishDigestion(): void {
     this.convertedHumans = []
-    if (this.capturedHumans.length === 0) {
+    if (this.capturedHumans.length === 0 && this.state === 'digesting') {
       this.state = 'hunting'
       this.targetRadius = this.baseRadius
     }

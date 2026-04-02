@@ -52,6 +52,13 @@ export class SuctionGhost extends Ghost {
   }
 
   /**
+   * 吸い込み待ちを含めて保留中のニンゲンがいるかを返す。
+   */
+  override hasPendingHumans(): boolean {
+    return super.hasPendingHumans() || this.suctionCapturedHumans.length > 0
+  }
+
+  /**
    * 捕食インデックスに応じた生気吸収レートを返す。
    * @param index 捕食リスト内のインデックス（0始まり）
    */

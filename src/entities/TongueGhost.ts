@@ -49,6 +49,13 @@ export class TongueGhost extends Ghost {
       this.state === 'digesting'
   }
 
+  /**
+   * 舌で把持中のニンゲンを含めて保留中のニンゲンがいるかを返す。
+   */
+  override hasPendingHumans(): boolean {
+    return super.hasPendingHumans() || this.tongueGrabbedHumans.length > 0
+  }
+
   // ランタンの光が舌にも当たる
   /**
    * 本体または舌先が指定範囲内にあるか判定する。

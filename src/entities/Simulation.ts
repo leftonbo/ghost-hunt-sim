@@ -411,10 +411,8 @@ export class Simulation {
       }
     }
 
-    // 終了判定（自由なニンゲンがおらず、消化中・変換待ちのおばけもいない場合に終了）
-    const hasPending = this.ghosts.some(
-      (g) => g.state === 'digesting' || g.convertedHumans.length > 0,
-    )
+    // 終了判定（自由なニンゲンがおらず、消化中・変換待ち・捕食待ちもない場合に終了）
+    const hasPending = this.ghosts.some((g) => g.hasPendingHumans())
     if (this.humans.length === 0 && !hasPending && this.state === 'running') {
       this.state = 'finished'
       this.ui.endOverlay.classList.add('visible')
