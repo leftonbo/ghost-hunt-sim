@@ -302,8 +302,9 @@ export class Simulation {
     for (const ghost of this.ghosts) {
       if (!ghost.canCapture()) continue
       for (let i = this.humans.length - 1; i >= 0; i--) {
-        if (ghost.checkCapture(this.humans[i])) {
-          const human = this.humans[i]
+        const human = this.humans[i]
+        if (human.invincibilityTimer > 0) continue
+        if (ghost.checkCapture(human)) {
           this.humans.splice(i, 1)
 
           // ランタンをドロップ

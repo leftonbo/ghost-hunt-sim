@@ -46,6 +46,10 @@ export const ESCAPE_THRESHOLD = 100
 /** おばけがスタンする継続フレーム数 */
 export const STUN_DURATION = 120
 
+// ニンゲン無敵パラメータ
+/** 脱出後の無敵フレーム数（3秒 @60fps） */
+export const INVINCIBILITY_DURATION = 180
+
 // ニンゲン視界・群れ行動
 /** ニンゲンがおばけを検知する視界半径 */
 export const HUMAN_VISION_RADIUS = 150

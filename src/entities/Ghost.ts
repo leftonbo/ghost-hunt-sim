@@ -11,6 +11,7 @@ import {
   HEALTH_DRAIN_RATE,
   ESCAPE_THRESHOLD,
   STUN_DURATION,
+  INVINCIBILITY_DURATION,
   WALL_MARGIN,
 } from '../core/constants'
 import { rand, dist, normalize, pickGhostColor } from '../core/utils'
@@ -251,6 +252,7 @@ export class Ghost {
       human.y = this.y + Math.sin(angle) * escapeDist
       human.vx = Math.cos(angle) * 3
       human.vy = Math.sin(angle) * 3
+      human.invincibilityTimer = INVINCIBILITY_DURATION
       this.escapedHumans.push(human)
       this.capturedHuman = null
     }
@@ -273,6 +275,7 @@ export class Ghost {
       human.y = this.y + Math.sin(angle) * escapeDist
       human.vx = Math.cos(angle) * 3
       human.vy = Math.sin(angle) * 3
+      human.invincibilityTimer = INVINCIBILITY_DURATION
       this.escapedHumans.push(human)
       this.capturedHuman = null
     }

@@ -7,6 +7,7 @@ import {
   HEALTH_DRAIN_RATE,
   ESCAPE_THRESHOLD,
   STUN_DURATION,
+  INVINCIBILITY_DURATION,
   SUCTION_SPEED_MULTIPLIER,
   SUCTION_START_RANGE,
   SUCTION_RANGE,
@@ -68,7 +69,7 @@ export class SuctionGhost extends Ghost {
 
       // コーン内のニンゲンを引き寄せる
       for (const human of humans) {
-        if (human.captured) continue
+        if (human.captured || human.invincibilityTimer > 0) continue
         const dx = human.x - this.x
         const dy = human.y - this.y
         const d = Math.hypot(dx, dy)
@@ -206,6 +207,7 @@ export class SuctionGhost extends Ghost {
     if (this.capturedHuman) {
       const human = this.capturedHuman
       human.captured = false
+      human.invincibilityTimer = INVINCIBILITY_DURATION
       this.releaseHumanFromBody(human)
       this.capturedHuman = null
     }
@@ -227,6 +229,7 @@ export class SuctionGhost extends Ghost {
     // 吸い込み中のニンゲンを解放
     for (const human of this.suctionCapturedHumans) {
       human.captured = false
+      human.invincibilityTimer = INVINCIBILITY_DURATION
       this.releaseHumanFromBody(human)
     }
     this.suctionCapturedHumans = []
@@ -235,6 +238,7 @@ export class SuctionGhost extends Ghost {
     // キュー内のニンゲンを解放
     for (const human of this.capturedQueue) {
       human.captured = false
+      human.invincibilityTimer = INVINCIBILITY_DURATION
       this.releaseHumanFromBody(human)
     }
     this.capturedQueue = []
@@ -243,6 +247,7 @@ export class SuctionGhost extends Ghost {
     if (this.state === 'digesting' && this.capturedHuman) {
       const human = this.capturedHuman
       human.captured = false
+      human.invincibilityTimer = INVINCIBILITY_DURATION
       this.releaseHumanFromBody(human)
       this.capturedHuman = null
     }

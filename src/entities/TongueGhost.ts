@@ -164,7 +164,7 @@ export class TongueGhost extends Ghost {
 
         // ニンゲンに当たったか判定
         for (const human of humans) {
-          if (human.captured || human.grabbed) continue
+          if (human.captured || human.grabbed || human.invincibilityTimer > 0) continue
           if (dist({ x: this.tongueTipX, y: this.tongueTipY }, human) < TONGUE_TIP_CAPTURE_DIST) {
             this.tongueGrabbedHuman = human
             human.grabbed = true
