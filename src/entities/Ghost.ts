@@ -110,8 +110,6 @@ export class Ghost {
       case 'digesting':
         this.updateDigesting(dt)
         break
-      case 'releasing':
-        break
       case 'stunned':
         this.updateStunned(dt)
         break
