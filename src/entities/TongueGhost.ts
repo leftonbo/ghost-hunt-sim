@@ -11,6 +11,7 @@ import {
   TONGUE_COOLDOWN,
   TONGUE_TIP_CAPTURE_DIST,
   TONGUE_REEL_SPEED,
+  INVINCIBILITY_DURATION,
 } from '../core/constants'
 import { rand, dist, normalize } from '../core/utils'
 
@@ -235,6 +236,7 @@ export class TongueGhost extends Ghost {
     // 掴んだニンゲンを解放
     if (this.tongueGrabbedHuman) {
       this.tongueGrabbedHuman.grabbed = false
+      this.tongueGrabbedHuman.invincibilityTimer = INVINCIBILITY_DURATION
     }
     // 舌をリセット
     this.tongueState = 'idle'
