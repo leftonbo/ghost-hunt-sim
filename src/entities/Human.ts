@@ -263,7 +263,7 @@ export class Human {
 
     // スタミナ管理
     const maxSt = this.effectiveMaxStamina()
-    if (this.fleeing && !this.isFatigued) {
+    if (this.fleeing && !this.isFatigued && this.invincibilityTimer <= 0) {
       this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN_RATE * dt)
     } else {
       this.stamina = Math.min(maxSt, this.stamina + maxSt * STAMINA_RECOVERY_RATE * dt)
@@ -273,7 +273,7 @@ export class Human {
     if (this.stamina <= 0) {
       this.isFatigued = true
     }
-    if (this.isFatigued && this.stamina >= maxSt) {
+    if (this.isFatigued && (this.stamina >= maxSt || this.invincibilityTimer > 0)) {
       this.isFatigued = false
     }
 
