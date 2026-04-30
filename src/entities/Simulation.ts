@@ -15,6 +15,7 @@ import {
   BG_COLOR_TOP,
   BG_COLOR_BOTTOM,
 } from '../core/constants'
+import { t } from '../core/i18n'
 import { rand, randInt, dist, formatTime } from '../core/utils'
 import { Ghost } from './Ghost'
 import { Human } from './Human'
@@ -213,7 +214,17 @@ export class Simulation {
       this.animFrameId = null
     }
     this.ui.endOverlay.classList.remove('visible')
+    this.ui.endStats.textContent = ''
     this.init()
+  }
+
+  /**
+   * 現在の言語設定に合わせて終了時の文言を再描画する。
+   */
+  refreshLocalizedText(): void {
+    if (this.state === 'finished') {
+      this.updateEndStats()
+    }
   }
 
   /**
@@ -416,10 +427,17 @@ export class Simulation {
     if (this.humans.length === 0 && !hasPending && this.state === 'running') {
       this.state = 'finished'
       this.ui.endOverlay.classList.add('visible')
-      this.ui.endStats.textContent = `おばけ ${this.ghosts.length} 体 ・ 経過時間 ${formatTime(this.elapsedTime)}`
+      this.updateEndStats()
       // 終了後もアニメーションは続ける
       this.loopFinished()
     }
+  }
+
+  updateEndStats(): void {
+    this.ui.endStats.textContent = t('ui.end.stats', {
+      count: this.ghosts.length,
+      time: formatTime(this.elapsedTime),
+    })
   }
 
   /**

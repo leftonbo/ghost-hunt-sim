@@ -1,0 +1,62 @@
+{
+  "ui": {
+    "documentTitle": "👻 おばけの追いかけっこシミュレーター",
+    "info": {
+      "ghostCount": "👻 おばけ:",
+      "humanCount": "🧑 ニンゲン:",
+      "lanternCount": "🔦 ランタン:",
+      "elapsedTime": "⏱️ 経過:"
+    },
+    "controls": {
+      "play": {
+        "start": "▶ 開始",
+        "pause": "⏸ 一時停止",
+        "resume": "▶ 再開"
+      },
+      "reset": "🔄 リセット",
+      "speed": "⚡ 速度:",
+      "settingsTitle": "詳細設定",
+      "close": "閉じる"
+    },
+    "settings": {
+      "title": "⚙️ 詳細設定",
+      "sections": {
+        "ghost": "👻 おばけ設定",
+        "human": "🧑 ニンゲン設定",
+        "item": "🔦 アイテム設定",
+        "language": "🌍 言語設定"
+      },
+      "ghostMode": {
+        "label": "モード:",
+        "options": {
+          "random": "ランダム",
+          "hard": "ハードモード",
+          "normal": "ノーマル固定",
+          "feral": "フェラル固定",
+          "suction": "すいこみ固定",
+          "tongue": "べろべろ固定"
+        }
+      },
+      "ghostCount": "初期おばけ:",
+      "ghostSpeed": "移動速度:",
+      "humanCount": "初期ニンゲン:",
+      "humanSpeed": "移動速度:",
+      "maxHealth": "生気最大値:",
+      "maxStamina": "スタミナ最大値:",
+      "escapeRate": "もがき力:",
+      "lanternCount": "ランタン:",
+      "language": {
+        "label": "言語:",
+        "options": {
+          "ja": "日本語",
+          "en": "English"
+        }
+      },
+      "defaults": "🔄 デフォルトに戻す"
+    },
+    "end": {
+      "title": "👻 おばけの世界になりました！",
+      "stats": "おばけ {{count}} 体 ・ 経過時間 {{time}}"
+    }
+  }
+}
