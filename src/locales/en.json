@@ -1,0 +1,62 @@
+{
+  "ui": {
+    "documentTitle": "👻 Ghost Chase Simulator",
+    "info": {
+      "ghostCount": "👻 Ghosts:",
+      "humanCount": "🧑 Humans:",
+      "lanternCount": "🔦 Lanterns:",
+      "elapsedTime": "⏱️ Elapsed:"
+    },
+    "controls": {
+      "play": {
+        "start": "▶ Start",
+        "pause": "⏸ Pause",
+        "resume": "▶ Resume"
+      },
+      "reset": "🔄 Reset",
+      "speed": "⚡ Speed:",
+      "settingsTitle": "Detailed settings",
+      "close": "Close"
+    },
+    "settings": {
+      "title": "⚙️ Detailed Settings",
+      "sections": {
+        "ghost": "👻 Ghost Settings",
+        "human": "🧑 Human Settings",
+        "item": "🔦 Item Settings",
+        "language": "🌍 Language Settings"
+      },
+      "ghostMode": {
+        "label": "Mode:",
+        "options": {
+          "random": "Random",
+          "hard": "Hard Mode",
+          "normal": "Normal Only",
+          "feral": "Feral Only",
+          "suction": "Suction Only",
+          "tongue": "Tongue Only"
+        }
+      },
+      "ghostCount": "Initial ghosts:",
+      "ghostSpeed": "Move speed:",
+      "humanCount": "Initial humans:",
+      "humanSpeed": "Move speed:",
+      "maxHealth": "Max health:",
+      "maxStamina": "Max stamina:",
+      "escapeRate": "Struggle power:",
+      "lanternCount": "Lanterns:",
+      "language": {
+        "label": "Language:",
+        "options": {
+          "ja": "日本語",
+          "en": "English"
+        }
+      },
+      "defaults": "🔄 Restore Defaults"
+    },
+    "end": {
+      "title": "👻 The World Belongs to Ghosts Now!",
+      "stats": "{{count}} ghosts ・ Elapsed {{time}}"
+    }
+  }
+}

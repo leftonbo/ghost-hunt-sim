@@ -25,6 +25,7 @@
 - **スタイル**: CSS Modules（`*.module.css`）
 - **リンター**: ESLint（flat config） + Prettier
 - **パッケージ管理**: npm
+- **i18n**: i18next（日本語 / 英語切替）
 - **描画**: Canvas 2D API（外部ライブラリ不使用）
 
 ## 開発コマンド
@@ -44,9 +45,13 @@ ghost-hunt-sim/
 ├── index.html                 # Vite エントリ HTML（DOM 構造のみ）
 ├── src/
 │   ├── main.ts                # エントリポイント（DOM 取得、イベント設定、Simulation 起動）
+│   ├── locales/
+│   │   ├── ja.json            # 日本語翻訳リソース
+│   │   └── en.json            # 英語翻訳リソース
 │   ├── style.module.css       # CSS Modules スタイル
 │   ├── vite-env.d.ts          # Vite / CSS Modules 型定義
 │   ├── core/
+│   │   ├── i18n.ts            # i18next 初期化、言語解決、DOM 翻訳適用
 │   │   ├── types.ts           # 型定義（GhostState, GhostType, GhostMode, ParticleType, SimulationState, Position, UIElements）
 │   │   ├── constants.ts       # ゲーム定数（速度、サイズ、色、距離、各種おばけパラメータなど）
 │   │   └── utils.ts           # ユーティリティ関数（rand, dist, clamp, normalize, angleDiff, formatTime 等）
@@ -91,8 +96,17 @@ ghost-hunt-sim/
 ### エントリポイント（`src/main.ts`）
 
 - CSS Modules のインポートとクラス名の DOM 適用
+- i18next 初期化、言語決定（localStorage → ブラウザ言語 → 日本語 fallback）
 - DOM 要素取得 → `UIElements` オブジェクト構築 → `Simulation` インスタンス生成
 - ボタン・スライダー・リサイズのイベントリスナー設定
+- 言語セレクタ変更時の静的 UI / 動的文言の再描画
+
+### 国際化（`src/core/i18n.ts` + `src/locales/*.json`）
+
+- 静的 HTML 文言は `data-i18n` / `data-i18n-title` / `data-i18n-aria-label` 属性で管理
+- 初回アクセス時は保存済み言語を優先し、未保存なら `navigator.language` が英語系のときのみ英語、それ以外は日本語
+- 選択した言語は `localStorage` キー `ghost-hunt-sim.language` に保存
+- `Simulation` の終了統計のような動的文言は `t()` を直接呼んで更新する
 
 ### スタイル（CSS Modules）
 
