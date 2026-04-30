@@ -26,7 +26,7 @@
 - **リンター**: ESLint（flat config） + Prettier
 - **パッケージ管理**: npm
 - **i18n**: i18next（日本語 / 英語切替）
-- **描画**: Canvas 2D API（外部ライブラリ不使用）
+- **描画**: Canvas 2D API
 
 ## 開発コマンド
 
