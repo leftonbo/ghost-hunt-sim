@@ -12,12 +12,28 @@ const resources = {
   en: { translation: en },
 } as const
 
+function readStoredLanguage(): string | null {
+  try {
+    return window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function persistLanguage(language: AppLanguage): void {
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+  } catch {
+    // ストレージ非対応環境では永続化を諦め、表示更新は継続する。
+  }
+}
+
 function isSupportedLanguage(value: string | null): value is AppLanguage {
   return value === 'ja' || value === 'en'
 }
 
 function resolveInitialLanguage(): AppLanguage {
-  const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  const storedLanguage = readStoredLanguage()
   if (isSupportedLanguage(storedLanguage)) {
     return storedLanguage
   }
@@ -61,7 +77,7 @@ export async function initI18n(): Promise<AppLanguage> {
  */
 export async function changeLanguage(language: AppLanguage): Promise<void> {
   await i18next.changeLanguage(language)
-  window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+  persistLanguage(language)
   syncDocumentLanguage()
 }
 
