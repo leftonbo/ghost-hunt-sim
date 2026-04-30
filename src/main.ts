@@ -45,7 +45,6 @@ document.querySelector('.settings-footer')!.classList.add(styles.settingsFooter)
 const ui: UIElements = {
   ghostCount: getElement('ghost-count'),
   humanCount: getElement('human-count'),
-  digestingCount: getElement('digesting-count'),
   lanternCount: getElement('lantern-count'),
   elapsedTime: getElement('elapsed-time'),
   endOverlay: getElement('end-overlay'),

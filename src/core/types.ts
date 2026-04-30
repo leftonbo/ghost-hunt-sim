@@ -21,7 +21,6 @@ export interface Position {
 export interface UIElements {
   ghostCount: HTMLElement
   humanCount: HTMLElement
-  digestingCount: HTMLElement
   lanternCount: HTMLElement
   elapsedTime: HTMLElement
   endOverlay: HTMLElement

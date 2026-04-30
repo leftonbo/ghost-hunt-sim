@@ -504,9 +504,6 @@ export class Simulation {
   updateUI(): void {
     this.ui.ghostCount.textContent = String(this.ghosts.length)
     this.ui.humanCount.textContent = String(this.humans.length)
-    this.ui.digestingCount.textContent = String(
-      this.ghosts.filter((g) => g.state === 'digesting').length,
-    )
     const carriedCount = this.humans.filter((h) => h.lantern).length
     this.ui.lanternCount.textContent = String(this.lanterns.length + carriedCount)
     this.ui.elapsedTime.textContent = formatTime(this.elapsedTime)
