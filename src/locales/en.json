@@ -34,7 +34,8 @@
           "normal": "Normal Only",
           "feral": "Feral Only",
           "suction": "Suction Only",
-          "tongue": "Tongue Only"
+          "tongue": "Tongue Only",
+          "smoke": "Smoke Only"
         }
       },
       "ghostCount": "Initial ghosts:",
