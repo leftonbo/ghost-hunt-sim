@@ -5,8 +5,9 @@ import { Ghost, type GhostConfig } from './Ghost'
 import { FeralGhost } from './FeralGhost'
 import { SuctionGhost } from './SuctionGhost'
 import { TongueGhost } from './TongueGhost'
+import { SmokeGhost } from './SmokeGhost'
 
-const SPECIAL_TYPES: GhostType[] = ['feral', 'suction', 'tongue']
+const SPECIAL_TYPES: GhostType[] = ['feral', 'suction', 'tongue', 'smoke']
 
 /**
  * おばけを生成するファクトリー関数。
@@ -25,6 +26,8 @@ export function createGhost(x: number, y: number, type: GhostType, config?: Ghos
       return new SuctionGhost(x, y, config)
     case 'tongue':
       return new TongueGhost(x, y, config)
+    case 'smoke':
+      return new SmokeGhost(x, y, config)
     default:
       return new Ghost(x, y, config)
   }
@@ -46,6 +49,8 @@ export function pickGhostType(mode: GhostMode): GhostType {
       return 'suction'
     case 'tongue':
       return 'tongue'
+    case 'smoke':
+      return 'smoke'
     case 'random':
       return Math.random() < RANDOM_MODE_SPECIAL_CHANCE
         ? SPECIAL_TYPES[randInt(0, SPECIAL_TYPES.length - 1)]

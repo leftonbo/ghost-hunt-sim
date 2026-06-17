@@ -1,6 +1,6 @@
 export type GhostState = 'hunting' | 'digesting' | 'stunned'
-export type GhostType = 'normal' | 'feral' | 'suction' | 'tongue'
-export type GhostMode = 'random' | 'hard' | 'normal' | 'feral' | 'suction' | 'tongue'
+export type GhostType = 'normal' | 'feral' | 'suction' | 'tongue' | 'smoke'
+export type GhostMode = 'random' | 'hard' | 'normal' | 'feral' | 'suction' | 'tongue' | 'smoke'
 export type ParticleType = 'mist' | 'flash' | 'star' | 'pop' | 'lantern'
 export type SimulationState = 'idle' | 'running' | 'paused' | 'finished'
 

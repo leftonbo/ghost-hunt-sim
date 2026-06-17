@@ -28,6 +28,9 @@ import {
   FATIGUE_SPEED_MULTIPLIER,
   STRUGGLE_STAMINA_COST,
   ESCAPE_PROGRESS_RATE,
+  SMOKE_DEBUFF_SPEED_MULTIPLIER,
+  SMOKE_DEBUFF_STAMINA_DRAIN_RATE,
+  SMOKE_DEBUFF_HEALTH_DRAIN_RATE,
 } from '../core/constants'
 import { rand, dist, normalize, pickHumanColor } from '../core/utils'
 
@@ -61,6 +64,7 @@ export class Human {
   escapeProgress: number
   invincibilityTimer: number
   lantern: Lantern | null
+  smokeDebuffTimer: number
   escapeUrgency: number
   corneredness: number
   cfgBaseSpeed: number
@@ -97,6 +101,7 @@ export class Human {
     this.escapeProgress = 0
     this.invincibilityTimer = 0
     this.lantern = null
+    this.smokeDebuffTimer = 0
     this.escapeUrgency = 0
     this.corneredness = 0
   }
@@ -123,6 +128,14 @@ export class Human {
     const lantern = this.lantern
     this.lantern = null
     return lantern
+  }
+
+  /**
+   * 煙幕による弱体化を付与または延長する。
+   * @param duration 付与するデバフ継続フレーム数
+   */
+  applySmokeDebuff(duration: number): void {
+    this.smokeDebuffTimer = Math.max(this.smokeDebuffTimer, duration)
   }
 
   /**
@@ -173,7 +186,17 @@ export class Human {
       this.invincibilityTimer = Math.max(0, this.invincibilityTimer - dt)
     }
 
-    const speedMultiplier = this.isFatigued ? FATIGUE_SPEED_MULTIPLIER : 1.0
+    if (this.smokeDebuffTimer > 0) {
+      this.smokeDebuffTimer = Math.max(0, this.smokeDebuffTimer - dt)
+      if (this.invincibilityTimer <= 0) {
+        this.health = Math.max(1, this.health - SMOKE_DEBUFF_HEALTH_DRAIN_RATE * dt)
+        this.stamina = Math.max(0, this.stamina - SMOKE_DEBUFF_STAMINA_DRAIN_RATE * dt)
+      }
+    }
+
+    const fatigueSpeedMultiplier = this.isFatigued ? FATIGUE_SPEED_MULTIPLIER : 1.0
+    const smokeSpeedMultiplier = this.smokeDebuffTimer > 0 ? SMOKE_DEBUFF_SPEED_MULTIPLIER : 1.0
+    const speedMultiplier = fatigueSpeedMultiplier * smokeSpeedMultiplier
     const speed = this.cfgBaseSpeed * speedMultiplier
     this.corneredness = this.computeCorneredness(canvasW, canvasH)
 
@@ -487,7 +510,8 @@ export class Human {
     const lifeAlpha = 0.5 + 0.5 * (this.health / MAX_HEALTH)
     const fatigueAlpha = this.isFatigued ? 0.6 : 1.0
     // 無敵中は点滅表示
-    const invincibleAlpha = this.invincibilityTimer > 0 ? 0.3 + Math.abs(Math.sin(Date.now() * 0.008)) * 0.7 : 1.0
+    const invincibleAlpha =
+      this.invincibilityTimer > 0 ? 0.3 + Math.abs(Math.sin(Date.now() * 0.008)) * 0.7 : 1.0
     ctx.globalAlpha = 0.9 * lifeAlpha * fatigueAlpha * invincibleAlpha
 
     // 体
@@ -549,6 +573,24 @@ export class Human {
       ctx.fillStyle = '#ffaa44'
       ctx.font = `${r * 1.0}px sans-serif`
       ctx.fillText('💤', x + r * 0.6, y - r * 2.0)
+    }
+
+    // 煙幕で弱っている間は薄い煙をまとわせる
+    if (this.smokeDebuffTimer > 0) {
+      ctx.globalAlpha = 0.35
+      ctx.fillStyle = 'rgba(145, 170, 160, 0.45)'
+      for (let i = 0; i < 3; i++) {
+        const angle = this.legPhase * 0.2 + i * ((Math.PI * 2) / 3)
+        ctx.beginPath()
+        ctx.arc(
+          x + Math.cos(angle) * r * 1.0,
+          y - r * 0.7 + Math.sin(angle) * r,
+          r * 0.55,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
     }
 
     // ランタン所持表示
