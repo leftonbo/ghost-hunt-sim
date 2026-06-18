@@ -30,7 +30,6 @@ import {
   ESCAPE_PROGRESS_RATE,
   SMOKE_DEBUFF_SPEED_MULTIPLIER,
   SMOKE_DEBUFF_STAMINA_DRAIN_RATE,
-  SMOKE_DEBUFF_HEALTH_DRAIN_RATE,
 } from '../core/constants'
 import { rand, dist, normalize, pickHumanColor } from '../core/utils'
 
@@ -189,7 +188,6 @@ export class Human {
     if (this.smokeDebuffTimer > 0) {
       this.smokeDebuffTimer = Math.max(0, this.smokeDebuffTimer - dt)
       if (this.invincibilityTimer <= 0) {
-        this.health = Math.max(1, this.health - SMOKE_DEBUFF_HEALTH_DRAIN_RATE * dt)
         this.stamina = Math.max(0, this.stamina - SMOKE_DEBUFF_STAMINA_DRAIN_RATE * dt)
       }
     }

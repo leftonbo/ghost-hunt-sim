@@ -200,7 +200,7 @@ export const TONGUE_REEL_SPEED = TONGUE_EXTEND_SPEED * 0.7
 
 // けむりおばけ
 /** けむりおばけの移動速度倍率 */
-export const SMOKE_SPEED_MULTIPLIER = 0.42
+export const SMOKE_SPEED_MULTIPLIER = 0.6
 /** 煙弾を投げられる最大距離 */
 export const SMOKE_THROW_RANGE = 260
 /** 煙弾の飛行速度 */
@@ -217,8 +217,6 @@ export const SMOKE_DEBUFF_DURATION = 120
 export const SMOKE_DEBUFF_SPEED_MULTIPLIER = 0.45
 /** 煙幕デバフ中の追加スタミナ減少量 */
 export const SMOKE_DEBUFF_STAMINA_DRAIN_RATE = 0.8
-/** 煙幕デバフ中の生気減少量 */
-export const SMOKE_DEBUFF_HEALTH_DRAIN_RATE = 0.08
 /** けむりおばけが弱ったとみなす生気割合 */
 export const SMOKE_WEAK_HEALTH_RATIO = 0.65
 
