@@ -507,7 +507,7 @@ export class Human {
 
     ctx.save()
     // 生気低下で薄くなる + 疲労で更に薄くなる
-    const lifeAlpha = 0.5 + 0.5 * (this.health / MAX_HEALTH)
+    const lifeAlpha = 0.5 + 0.5 * (this.health / this.cfgMaxHealth)
     const fatigueAlpha = this.isFatigued ? 0.6 : 1.0
     // 無敵中は点滅表示
     const invincibleAlpha =
