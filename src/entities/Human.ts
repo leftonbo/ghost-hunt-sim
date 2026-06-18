@@ -577,6 +577,7 @@ export class Human {
 
     // 煙幕で弱っている間は薄い煙をまとわせる
     if (this.smokeDebuffTimer > 0) {
+      ctx.save()
       ctx.globalAlpha = 0.35
       ctx.fillStyle = 'rgba(145, 170, 160, 0.45)'
       for (let i = 0; i < 3; i++) {
@@ -591,6 +592,7 @@ export class Human {
         )
         ctx.fill()
       }
+      ctx.restore()
     }
 
     // ランタン所持表示

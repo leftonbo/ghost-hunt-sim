@@ -66,13 +66,37 @@ export class SmokeGhost extends Ghost {
   }
 
   /**
+   * 状態に応じて煙幕攻撃と移動を更新する。
+   * @param humans 現在生存しているニンゲン配列
+   * @param dt 経過フレーム時間
+   * @param time 現在時刻（ms）
+   * @param canvasW キャンバス幅
+   * @param canvasH キャンバス高さ
+   * @param ghosts 全おばけ配列
+   */
+  override update(
+    humans: Human[],
+    dt: number,
+    time: number,
+    canvasW: number,
+    canvasH: number,
+    ghosts: Ghost[],
+  ): void {
+    if (this.state !== 'hunting') {
+      this.updateSmokeAttack(humans, dt, false)
+    }
+
+    super.update(humans, dt, time, canvasW, canvasH, ghosts)
+  }
+
+  /**
    * 狩猟状態と煙幕攻撃を更新する。
    * @param humans 現在生存しているニンゲン配列
    * @param dt 経過フレーム時間
    * @param ghosts 全おばけ配列
    */
   override updateHunting(humans: Human[], dt: number, ghosts: Ghost[]): void {
-    this.updateSmokeAttack(humans, dt)
+    this.updateSmokeAttack(humans, dt, true)
 
     const target = this.findPreferredTarget(humans)
     if (target) {
@@ -105,7 +129,7 @@ export class SmokeGhost extends Ghost {
     super.stunExternal()
   }
 
-  private updateSmokeAttack(humans: Human[], dt: number): void {
+  private updateSmokeAttack(humans: Human[], dt: number, canThrow: boolean): void {
     this.smokeCooldown = Math.max(0, this.smokeCooldown - dt)
 
     if (this.smokeOrbActive) {
@@ -133,7 +157,7 @@ export class SmokeGhost extends Ghost {
       }
     }
 
-    if (!this.smokeOrbActive && this.smokeCloudTimer <= 0 && this.smokeCooldown <= 0) {
+    if (canThrow && !this.smokeOrbActive && this.smokeCloudTimer <= 0 && this.smokeCooldown <= 0) {
       const target = this.findSmokeTarget(humans)
       if (target) {
         this.throwSmokeOrb(target)
