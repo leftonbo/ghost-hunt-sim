@@ -198,6 +198,28 @@ export const TONGUE_TIP_CAPTURE_DIST = 15
 /** 舌を巻き取る速度 */
 export const TONGUE_REEL_SPEED = TONGUE_EXTEND_SPEED * 0.7
 
+// けむりおばけ
+/** けむりおばけの移動速度倍率 */
+export const SMOKE_SPEED_MULTIPLIER = 0.6
+/** 煙弾を投げられる最大距離 */
+export const SMOKE_THROW_RANGE = 260
+/** 煙弾の飛行速度 */
+export const SMOKE_PROJECTILE_SPEED = 7
+/** 煙幕の有効半径 */
+export const SMOKE_CLOUD_RADIUS = 58
+/** 煙幕が残るフレーム数 */
+export const SMOKE_CLOUD_DURATION = 180
+/** 煙弾の再使用クールダウン */
+export const SMOKE_COOLDOWN = 150
+/** 煙幕デバフの継続フレーム数 */
+export const SMOKE_DEBUFF_DURATION = 120
+/** 煙幕デバフ中の移動速度倍率 */
+export const SMOKE_DEBUFF_SPEED_MULTIPLIER = 0.45
+/** 煙幕デバフ中の追加スタミナ減少量 */
+export const SMOKE_DEBUFF_STAMINA_DRAIN_RATE = 0.8
+/** けむりおばけが弱ったとみなす生気割合 */
+export const SMOKE_WEAK_HEALTH_RATIO = 0.65
+
 // おばけモード出現確率
 /** ランダムモードで特殊おばけが選ばれる確率 */
 export const RANDOM_MODE_SPECIAL_CHANCE = 0.15
