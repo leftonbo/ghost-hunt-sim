@@ -42,7 +42,9 @@
 
 ```text
 ghost-hunt-sim/
-├── index.html                 # Vite エントリ HTML（DOM 構造のみ）
+├── index.html                 # Vite エントリ HTML（OGPメタデータ、DOM 構造）
+├── public/
+│   └── ghosthuntsim-ogp.png   # OGP画像（1200 × 630px）
 ├── src/
 │   ├── main.ts                # エントリポイント（DOM 取得、イベント設定、Simulation 起動）
 │   ├── locales/

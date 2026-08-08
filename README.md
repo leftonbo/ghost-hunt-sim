@@ -52,6 +52,7 @@
 - **スタイル**: CSS Modules
 - **リンター**: ESLint + Prettier
 - **i18n**: i18next（日本語 / 英語切替、localStorage 保存）
+- **OGP**: Open Graph / X Card 対応（1200 × 630px）
 - 描画は Canvas API ベース（描画ライブラリ不使用）
 - `requestAnimationFrame` ベースの 60fps ゲームループ
 - update → draw の分離構造
@@ -86,6 +87,8 @@
 ```text
 ghost-hunt-sim/
 ├── index.html                 # Vite エントリ HTML
+├── public/
+│   └── ghosthuntsim-ogp.png   # OGP画像
 ├── src/
 │   ├── main.ts                # エントリポイント
 │   ├── style.module.css       # CSS Modules スタイル
