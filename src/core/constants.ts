@@ -111,11 +111,6 @@ export const GHOST_COLORS_HSL: [number, number, number][] = [
   [190, 50, 65], // シアン
 ]
 
-/** ニンゲン色相の最小値 */
-export const HUMAN_HUE_MIN = 15
-/** ニンゲン色相の最大値 */
-export const HUMAN_HUE_MAX = 45
-
 // 背景色
 /** 背景グラデーション上端の色 */
 export const BG_COLOR_TOP = '#1a0a2e'

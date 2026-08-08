@@ -504,13 +504,12 @@ export class Human {
     const legSwing = Math.sin(this.legPhase) * (this.fleeing ? 5 : 3)
 
     ctx.save()
-    // 生気低下で薄くなる + 疲労で更に薄くなる
+    // 生気低下で薄くなる
     const lifeAlpha = 0.5 + 0.5 * (this.health / this.cfgMaxHealth)
-    const fatigueAlpha = this.isFatigued ? 0.6 : 1.0
     // 無敵中は点滅表示
     const invincibleAlpha =
       this.invincibilityTimer > 0 ? 0.3 + Math.abs(Math.sin(Date.now() * 0.008)) * 0.7 : 1.0
-    ctx.globalAlpha = 0.9 * lifeAlpha * fatigueAlpha * invincibleAlpha
+    ctx.globalAlpha = 1.0 * lifeAlpha * invincibleAlpha
 
     // 体
     ctx.fillStyle = this.color
@@ -545,17 +544,6 @@ export class Human {
     ctx.moveTo(x + r * 0.7, y - r * 0.2)
     ctx.lineTo(x + r * 1.3 + armSwing * 0.3, y + r * 0.5)
     ctx.stroke()
-
-    // 目（白い点）
-    ctx.fillStyle = '#ffffff'
-    ctx.globalAlpha = 0.8
-    const eyeSize = r * 0.18
-    ctx.beginPath()
-    ctx.arc(x - r * 0.2, y - r * 1.5, eyeSize, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(x + r * 0.2, y - r * 1.5, eyeSize, 0, Math.PI * 2)
-    ctx.fill()
 
     // 逃走中マーク
     if (this.fleeing) {

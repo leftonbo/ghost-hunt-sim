@@ -1,4 +1,4 @@
-import { GHOST_COLORS_HSL, HUMAN_HUE_MIN, HUMAN_HUE_MAX } from './constants'
+import { GHOST_COLORS_HSL } from './constants'
 import type { Position } from './types'
 
 /**
@@ -71,9 +71,9 @@ export function pickGhostColor(): string {
  * @returns ランダムに選択されたニンゲンの色（HSL形式）
  */
 export function pickHumanColor(): string {
-  const h = rand(HUMAN_HUE_MIN, HUMAN_HUE_MAX)
-  const s = rand(45, 70)
-  const l = rand(55, 75)
+  const h = 0
+  const s = 0
+  const l = rand(70, 90)
   return `hsl(${h}, ${s}%, ${l}%)`
 }
 
