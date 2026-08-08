@@ -557,20 +557,20 @@ export class Human {
     ctx.arc(x + r * 0.2, y - r * 1.5, eyeSize, 0, Math.PI * 2)
     ctx.fill()
 
-    // 逃走中は汗マーク
+    // 逃走中マーク
     if (this.fleeing) {
       ctx.globalAlpha = 0.6
       ctx.fillStyle = '#88ccff'
       ctx.font = `${r * 1.2}px sans-serif`
-      ctx.fillText('💧', x + r * 0.8, y - r * 1.2)
+      ctx.fillText('❗️', x + r * 0.8, y - r * 1.2)
     }
 
-    // 疲労中は疲労マーク
+    // 疲労中マーク
     if (this.isFatigued) {
       ctx.globalAlpha = 0.7
       ctx.fillStyle = '#ffaa44'
       ctx.font = `${r * 1.0}px sans-serif`
-      ctx.fillText('💤', x + r * 0.6, y - r * 2.0)
+      ctx.fillText('💦', x + r * 0.6, y - r * 2.0)
     }
 
     // 煙幕で弱っている間は薄い煙をまとわせる
