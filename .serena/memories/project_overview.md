@@ -26,6 +26,11 @@
 - src/entities/Particle.ts — パーティクルエフェクト（霧/フラッシュ/星/ポップ）
 - src/entities/Simulation.ts — シミュレーション管理（ゲームループ、エンティティ管理、UI連携）
 
+## 配信・OGP
+- GitHub Pages URL: https://leftonbo.github.io/ghost-hunt-sim/
+- index.html に Open Graph / X Card のメタデータを定義
+- public/ghosthuntsim-ogp.png（1200 × 630px）をSNS共有画像として配信
+
 ## キークラス: Simulation
 - プロパティ: canvas, ctx, ghosts, humans, particles, state, speedMultiplier, elapsedTime等
 - メソッド: constructor, resize, init, start, pause, reset, loop, update, loopFinished, drawFrame, updateUI
