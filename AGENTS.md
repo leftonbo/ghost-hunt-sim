@@ -24,7 +24,8 @@
 - **言語**: TypeScript（strict モード）
 - **スタイル**: CSS Modules（`*.module.css`）
 - **リンター**: ESLint（flat config） + Prettier
-- **パッケージ管理**: npm
+- **開発・CI 環境**: Node.js 26 LTS（バージョンは `.nvmrc` で指定）
+- **パッケージ管理**: npm（依存の復元は `npm ci`）
 - **i18n**: i18next（日本語 / 英語切替）
 - **描画**: Canvas 2D API
 
