@@ -1,6 +1,7 @@
 import type { GhostType, Position } from '../core/types'
 import {
   HUMAN_FLOCK_RADIUS,
+  INVINCIBILITY_DURATION,
   STITCH_CINCH_DURATION,
   STITCH_RADIUS,
   STITCH_SEGMENTS,
@@ -27,6 +28,8 @@ export class StitchGhost extends Ghost {
   override color = '#f2cba6'
   private loop: StitchLoop | null = null
   private justClosed = false
+  /** 布で引き寄せているニンゲンと、輪が閉じた瞬間の位置。 */
+  private readonly bundledHumans = new Map<Human, Position>()
 
   /**
    * 群れの位置から縫い始めを決め、閉じた布を絞る。
@@ -48,22 +51,36 @@ export class StitchGhost extends Ghost {
     // 輪を閉じた直後は、同じ更新フレーム内で複数人が捕食判定を受ける。
     this.justClosed = false
     const loop = this.loop
-    if (loop) {
-      if (
-        loop.width !== width ||
-        loop.height !== height ||
-        (loop.cinchRemaining === 0 && humans.length === 0)
-      ) {
-        this.loop = null
-      } else if (loop.cinchRemaining > 0) {
-        loop.cinchRemaining -= dt
-        if (loop.cinchRemaining <= 0) this.loop = null
-      }
+    if (
+      loop?.cinchRemaining === 0 &&
+      (loop.width !== width || loop.height !== height || humans.length === 0)
+    ) {
+      this.loop = null
     }
     if (!this.loop && this.state === 'hunting') {
       this.loop = this.planLoop(humans, width, height)
     }
     super.update(humans, dt, time, width, height, ghosts)
+    // 壁反射後の本体位置を布とニンゲンの共通の引き寄せ先にする。
+    if (loop && loop.cinchRemaining > 0 && !this.justClosed) this.cinchLoop(loop, dt)
+  }
+
+  private cinchLoop(loop: StitchLoop, dt: number): void {
+    loop.cinchRemaining = Math.max(0, loop.cinchRemaining - dt)
+    const scale = loop.cinchRemaining / STITCH_CINCH_DURATION
+    for (const [human, start] of this.bundledHumans) {
+      human.x = this.x + (start.x - this.x) * scale
+      human.y = this.y + (start.y - this.y) * scale
+    }
+
+    if (loop.cinchRemaining === 0) {
+      for (const human of this.bundledHumans.keys()) {
+        human.grabbed = false
+        super.startFeeding(human)
+      }
+      this.bundledHumans.clear()
+      this.loop = null
+    }
   }
 
   private planLoop(humans: Human[], width: number, height: number): StitchLoop | null {
@@ -161,8 +178,28 @@ export class StitchGhost extends Ghost {
     return inside
   }
 
-  /** ランタンでスタンしたら張った糸をほどき、捕食済みのニンゲンを解放する。 */
+  /**
+   * ニンゲンを布につなぎ、輪が閉じた位置から引き寄せ始める。
+   * @param human 輪の内側にいたニンゲン
+   */
+  override startFeeding(human: Human): void {
+    human.grabbed = true
+    this.bundledHumans.set(human, { x: human.x, y: human.y })
+  }
+
+  /** 引き寄せ中または消化中のニンゲンが残っているかを返す。 */
+  override hasPendingHumans(): boolean {
+    return this.bundledHumans.size > 0 || super.hasPendingHumans()
+  }
+
+  /** ランタンで糸がほどけたら、引き寄せ途中のニンゲンをその位置で解放する。 */
   override stunExternal(): void {
+    for (const human of this.bundledHumans.keys()) {
+      human.grabbed = false
+      human.invincibilityTimer = INVINCIBILITY_DURATION
+      this.escapedHumans.push(human)
+    }
+    this.bundledHumans.clear()
     this.loop = null
     this.justClosed = false
     super.stunExternal()
@@ -174,6 +211,7 @@ export class StitchGhost extends Ghost {
    * @param time 現在時刻（ms）
    */
   override draw(ctx: CanvasRenderingContext2D, time: number): void {
+    for (const human of this.bundledHumans.keys()) human.draw(ctx)
     const loop = this.loop
     if (loop && loop.nextPoint > 0) this.drawThread(ctx, loop)
     super.draw(ctx, time)
@@ -182,7 +220,7 @@ export class StitchGhost extends Ghost {
   private drawThread(ctx: CanvasRenderingContext2D, loop: StitchLoop): void {
     ctx.save()
     const start = loop.points[0]
-    const hasBundle = this.capturedHumans.length > 0
+    const hasBundle = this.bundledHumans.size > 0
     if (loop.cinchRemaining > 0) {
       const scale = loop.cinchRemaining / STITCH_CINCH_DURATION
       ctx.translate(this.x, this.y)
