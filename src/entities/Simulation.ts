@@ -23,6 +23,13 @@ import { Particle } from './Particle'
 import { Lantern } from './Lantern'
 import { createGhost, pickGhostType } from './ghost-factory'
 
+const playButtonKeys: Record<SimulationState, string> = {
+  idle: 'ui.controls.play.start',
+  running: 'ui.controls.play.pause',
+  paused: 'ui.controls.play.resume',
+  finished: 'ui.controls.play.start',
+}
+
 /**
  * シミュレーション全体の生成・更新・描画を統括するクラス。
  */
@@ -36,7 +43,6 @@ export class Simulation {
   state: SimulationState
   elapsedTime: number
   speedMultiplier: number
-  lastTimestamp: number
   animFrameId: number | null
   bgGradient: CanvasGradient | null
   ghostCountInit: number
@@ -67,7 +73,6 @@ export class Simulation {
     this.state = 'idle'
     this.elapsedTime = 0
     this.speedMultiplier = 1.0
-    this.lastTimestamp = 0
     this.animFrameId = null
     this.bgGradient = null
 
@@ -117,7 +122,7 @@ export class Simulation {
     this.particles = []
     this.lanterns = []
     this.elapsedTime = 0
-    this.state = 'idle'
+    this.setState('idle')
 
     const margin = 60
 
@@ -177,14 +182,19 @@ export class Simulation {
     this.drawFrame(0)
   }
 
+  private setState(state: SimulationState): void {
+    this.state = state
+    const key = playButtonKeys[state]
+    this.ui.playButton.dataset.i18n = key
+    this.ui.playButton.textContent = t(key)
+  }
+
   /**
    * シミュレーションを開始または再開する。
    */
   start(): void {
-    if (this.state === 'finished') return
     if (this.state === 'idle' || this.state === 'paused') {
-      this.state = 'running'
-      this.lastTimestamp = performance.now()
+      this.setState('running')
       this.loop()
     }
   }
@@ -194,7 +204,7 @@ export class Simulation {
    */
   pause(): void {
     if (this.state === 'running') {
-      this.state = 'paused'
+      this.setState('paused')
       if (this.animFrameId) {
         cancelAnimationFrame(this.animFrameId)
         this.animFrameId = null
@@ -208,7 +218,6 @@ export class Simulation {
    * シミュレーションを初期状態へリセットする。
    */
   reset(): void {
-    this.state = 'idle'
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId)
       this.animFrameId = null
@@ -229,12 +238,12 @@ export class Simulation {
 
   /**
    * 実行中ループを1フレーム進める。
+   * @param previousTimestamp 直前の描画時刻。開始・再開の最初のフレームは経過時間を0とする。
    */
-  loop(): void {
+  loop(previousTimestamp?: number): void {
     if (this.state !== 'running') return
     this.animFrameId = requestAnimationFrame((ts) => {
-      const rawDt = ts - this.lastTimestamp
-      this.lastTimestamp = ts
+      const rawDt = ts - (previousTimestamp ?? ts)
       // dt をフレーム単位に正規化（16.67ms = 1フレーム）、上限キャップ
       const dt = Math.min(rawDt / 16.67, 3) * this.speedMultiplier
 
@@ -242,7 +251,7 @@ export class Simulation {
       this.update(dt, ts)
       this.drawFrame(ts)
       this.updateUI()
-      this.loop()
+      this.loop(ts)
     })
   }
 
@@ -425,11 +434,11 @@ export class Simulation {
     // 終了判定（自由なニンゲンがおらず、消化中・変換待ち・捕食待ちもない場合に終了）
     const hasPending = this.ghosts.some((g) => g.hasPendingHumans())
     if (this.humans.length === 0 && !hasPending && this.state === 'running') {
-      this.state = 'finished'
+      this.setState('finished')
       this.ui.endOverlay.classList.add('visible')
       this.updateEndStats()
       // 終了後もアニメーションは続ける
-      this.loopFinished()
+      this.loopFinished(time)
     }
   }
 
@@ -442,11 +451,11 @@ export class Simulation {
 
   /**
    * 終了後の演出ループを更新する。
+   * @param previousTimestamp 直前の描画時刻
    */
-  loopFinished(): void {
+  loopFinished(previousTimestamp: number): void {
     this.animFrameId = requestAnimationFrame((ts) => {
-      const rawDt = ts - this.lastTimestamp
-      this.lastTimestamp = ts
+      const rawDt = ts - previousTimestamp
       const dt = Math.min(rawDt / 16.67, 3)
 
       // おばけだけゆらゆら動かす
@@ -471,7 +480,7 @@ export class Simulation {
       }
       this.particles = this.particles.filter((p) => p.update(dt))
       this.drawFrame(ts)
-      this.loopFinished()
+      this.loopFinished(ts)
     })
   }
 
