@@ -19,6 +19,7 @@ export interface Position {
  * 追加のUI要素を実装する際はこのインターフェースを更新すること。
  */
 export interface UIElements {
+  playButton: HTMLButtonElement
   ghostCount: HTMLElement
   humanCount: HTMLElement
   lanternCount: HTMLElement
