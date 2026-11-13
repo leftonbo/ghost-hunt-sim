@@ -64,6 +64,7 @@ ghost-hunt-sim/
 │       ├── SuctionGhost.ts    # すいこみおばけ（コーン吸引型）
 │       ├── TongueGhost.ts     # べろべろおばけ（舌射出型）
 │       ├── SmokeGhost.ts      # けむりおばけ（煙幕デバフ型）
+│       ├── StitchGhost.ts     # ぬいとりおばけ（糸で囲んで捕食）
 │       ├── ghost-factory.ts   # おばけファクトリ関数（種類生成・モード判定）
 │       ├── Human.ts           # ニンゲンクラス
 │       ├── Lantern.ts         # ランタンアイテムクラス
@@ -134,6 +135,7 @@ ghost-hunt-sim/
 | `SuctionGhost` | `src/entities/SuctionGhost.ts` | すいこみおばけ。コーン状範囲のニンゲン吸引、複数同時捕食可能、消化速度低下（SUCTION_DRAIN_MULTIPLIER）。基底クラスの配列管理に統合。紫系、横広体型。移動速度やや遅い |
 | `TongueGhost` | `src/entities/TongueGhost.ts` | べろべろおばけ。遠距離から舌を伸ばしてホーミング捕食。舌で複数ニンゲンを同時に掴み（tongueGrabbedHumans[]）、本体まで引き寄せてから捕食。舌にもランタン判定あり。緑系、螺旋瞳。移動速度遅い |
 | `SmokeGhost` | `src/entities/SmokeGhost.ts` | けむりおばけ。ニンゲンより遅く、遠距離へ煙弾を投げて煙幕内のニンゲンに移動速度低下・スタミナ減少を与える。煙で弱ったニンゲンだけを接触捕食する。灰緑系、薄い煙をまとった外見 |
+| `StitchGhost` | `src/entities/StitchGhost.ts` | ぬいとりおばけ。最寄りのニンゲンとその近傍の重心を囲む経路を固定し、針が始点に戻ったフレームだけ糸の内側を捕食する。糸の描画と内外判定は壁際を含めて同じ頂点列を使う。ランタンによるスタンで糸を解除する |
 | `ghost-factory` | `src/entities/ghost-factory.ts` | createGhost（種類指定生成）とpickGhostType（モード別種類選択）を提供 |
 | `Human` | `src/entities/Human.ts` | ニンゲンエンティティ。生気・スタミナ管理、逃走行動、疲労状態、もがき（捕食中）、脱出後無敵（invincibilityTimer）、舌による引き寄せ（grabbed状態）、煙幕デバフ（smokeDebuffTimer）、ランタン所持・ドロップ、ランダム移動、簡易Boids群れ行動、壁反射、描画 |
 | `Lantern` | `src/entities/Lantern.ts` | ランタンアイテム。地面配置・ニンゲン所持、おばけ接近時の自動発動（範囲スタン）、クールダウン管理、描画 |
@@ -229,6 +231,7 @@ hunting ←→ [ニンゲンに接触] → digesting（複数ニンゲン並列�
 - すいこみ（`SUCTION_RANGE`, `SUCTION_CONE_HALF_ANGLE`, `SUCTION_PULL_STRENGTH`, `SUCTION_DURATION`, `SUCTION_COOLDOWN`, `SUCTION_DRAIN_MULTIPLIER`）
 - べろべろ（`TONGUE_RANGE`, `TONGUE_EXTEND_SPEED`, `TONGUE_HOMING_STRENGTH`, `TONGUE_COOLDOWN`, `TONGUE_TIP_CAPTURE_DIST`, `TONGUE_REEL_SPEED`）
 - けむり（`SMOKE_SPEED_MULTIPLIER`, `SMOKE_THROW_RANGE`, `SMOKE_PROJECTILE_SPEED`, `SMOKE_CLOUD_RADIUS`, `SMOKE_CLOUD_DURATION`, `SMOKE_COOLDOWN`, `SMOKE_DEBUFF_DURATION`, `SMOKE_DEBUFF_SPEED_MULTIPLIER`, `SMOKE_DEBUFF_STAMINA_DRAIN_RATE`, `SMOKE_WEAK_HEALTH_RATIO`）
+- ぬいとり（`STITCH_START_RANGE`, `STITCH_RADIUS`, `STITCH_SEGMENTS`, `STITCH_SPEED_MULTIPLIER`, `STITCH_CINCH_DURATION`）
 - モード出現確率（`RANDOM_MODE_SPECIAL_CHANCE`, `HARD_MODE_SPECIAL_CHANCE`）
 
 ### 新エンティティの追加
@@ -241,8 +244,7 @@ hunting ←→ [ニンゲンに接触] → digesting（複数ニンゲン並列�
 2. 種類固有の定数を `src/core/constants.ts` に追加
 3. `Ghost` を継承したサブクラスを `src/entities/` に作成（`updateHunting`, `drawBody`, `drawFace` 等をオーバーライド）
 4. `src/entities/ghost-factory.ts` の `createGhost` と `pickGhostType` に新種類を追加
-5. `GhostMode` に固定モードを追加（`src/core/types.ts`）
-6. `index.html` の `select-ghost-mode` に `<option>` を追加
+5. 固定モード用に `index.html` の `select-ghost-mode` に `<option>` を追加し、`src/locales/ja.json` と `src/locales/en.json` に表示名を追加する（`GhostMode` は全 `GhostType` を含む）
 
 ### 新エフェクトの追加
 

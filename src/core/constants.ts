@@ -215,6 +215,18 @@ export const SMOKE_DEBUFF_STAMINA_DRAIN_RATE = 0.8
 /** けむりおばけが弱ったとみなす生気割合 */
 export const SMOKE_WEAK_HEALTH_RATIO = 0.65
 
+// ぬいとりおばけ
+/** 近くの群れを囲み始める距離 */
+export const STITCH_START_RANGE = 150
+/** 糸の輪の半径 */
+export const STITCH_RADIUS = 90
+/** 一周を構成する縫い目の数 */
+export const STITCH_SEGMENTS = 16
+/** 針を運ぶ速さ（おばけの移動速度に対する倍率） */
+export const STITCH_SPEED_MULTIPLIER = 5.5
+/** 布を絞りきるまでのフレーム数 */
+export const STITCH_CINCH_DURATION = 30
+
 // おばけモード出現確率
 /** ランダムモードで特殊おばけが選ばれる確率 */
 export const RANDOM_MODE_SPECIAL_CHANCE = 0.15
