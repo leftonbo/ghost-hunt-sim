@@ -122,7 +122,8 @@ ghost-hunt-sim/
 ### ゲームループ
 
 - `requestAnimationFrame` ベース、`update()` → `drawFrame()` 分離構造
-- `Simulation` クラスが全体を管理
+- `Simulation` クラスが全体を管理。開始・再開時は最初の描画フレームを計時の基準にする
+- 操作ボタンの文言と翻訳キーは `Simulation.setState()` で状態の変更時に更新する
 
 ### クラス構成
 

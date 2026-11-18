@@ -1,6 +1,6 @@
 import styles from './style.module.css'
 import { Simulation } from './entities/Simulation'
-import type { GhostMode, SimulationState, UIElements } from './core/types'
+import type { GhostMode, UIElements } from './core/types'
 import {
   DEFAULT_GHOST_COUNT,
   DEFAULT_HUMAN_COUNT,
@@ -16,7 +16,6 @@ import {
   changeLanguage,
   getCurrentLanguage,
   initI18n,
-  t,
   type AppLanguage,
 } from './core/i18n'
 
@@ -27,16 +26,6 @@ function getElement<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id)
   if (!el) throw new Error(`Element #${id} not found`)
   return el as T
-}
-
-function getPlayButtonKey(state: SimulationState): string {
-  const labels: Record<SimulationState, string> = {
-    idle: 'ui.controls.play.start',
-    running: 'ui.controls.play.pause',
-    paused: 'ui.controls.play.resume',
-    finished: 'ui.controls.play.start',
-  }
-  return labels[state]
 }
 
 async function bootstrap(): Promise<void> {
@@ -64,6 +53,7 @@ async function bootstrap(): Promise<void> {
 
   // UI要素
   const ui: UIElements = {
+    playButton: getElement<HTMLButtonElement>('btn-play'),
     ghostCount: getElement('ghost-count'),
     humanCount: getElement('human-count'),
     lanternCount: getElement('lantern-count'),
@@ -77,16 +67,10 @@ async function bootstrap(): Promise<void> {
 
   const settingsOverlay = getElement('settings-overlay')
   const settingsPanel = getElement('settings-panel')
-  const btnPlay = getElement<HTMLButtonElement>('btn-play')
   const selectLanguage = getElement<HTMLSelectElement>('select-language')
-
-  function updatePlayButtonLabel(): void {
-    btnPlay.textContent = t(getPlayButtonKey(sim.state))
-  }
 
   function refreshLocalizedUi(): void {
     applyDocumentTranslations()
-    updatePlayButtonLabel()
     sim.refreshLocalizedText()
   }
 
@@ -107,25 +91,20 @@ async function bootstrap(): Promise<void> {
     if (e.key === 'Escape') closeSettings()
   })
 
-  btnPlay.addEventListener('click', () => {
+  ui.playButton.addEventListener('click', () => {
     if (sim.state === 'idle') {
       sim.init()
       sim.start()
-    } else if (sim.state === 'running') {
-      sim.pause()
-    } else if (sim.state === 'paused') {
+    } else if (sim.state === 'running' || sim.state === 'paused') {
       sim.pause()
     } else if (sim.state === 'finished') {
       sim.reset()
       sim.start()
     }
-
-    updatePlayButtonLabel()
   })
 
   getElement<HTMLButtonElement>('btn-reset').addEventListener('click', () => {
     sim.reset()
-    updatePlayButtonLabel()
   })
 
   const sliderGhosts = getElement<HTMLInputElement>('slider-ghosts')
